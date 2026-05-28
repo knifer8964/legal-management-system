@@ -36,3 +36,7 @@ Thumbs.db
 *.tmp
 *.temp
 _temp_*/
+
+# Secrets - NEVER commit
+.github_token
+.git-credentials
