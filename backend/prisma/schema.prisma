@@ -1,0 +1,331 @@
+// Prisma Schema for Legal Management System
+// Database: MySQL 8.0+
+// ORM: Prisma v5.7+
+// FIXED VERSION: Corrected syntax errors in Order model and enums
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ===== 用户与权限模块 =====
+
+model User {
+  id            Int       @id @default(autoincrement())
+  username      String    @unique @db.VarChar(50)
+  passwordHash  String    @map("password_hash") @db.VarChar(255)
+  realName      String    @map("real_name") @db.VarChar(100)
+  email         String?   @unique @db.VarChar(100)
+  phone         String?   @db.VarChar(20)
+  roleId        Int       @map("role_id")
+  department    String?   @db.VarChar(100)
+  status        UserStatus @default(ACTIVE)
+  lastLoginAt   DateTime? @map("last_login_at") @db.DateTime(0)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.DateTime(0)
+  
+  // Relations
+  role          Role      @relation(fields: [roleId], references: [id])
+  contracts     Contract[] @relation("ContractCreator")
+  cases         Case[]     @relation("CaseCreator")
+  tasksAssigned Task[]     @relation("TaskAssignee")
+  tasksCreated  Task[]     @relation("TaskCreator")
+  
+  @@index([username])
+  @@index([email])
+  @@index([roleId])
+  @@map("users")
+}
+
+model Role {
+  id          Int       @id @default(autoincrement())
+  roleName    String   @unique @map("role_name") @db.VarChar(50)
+  description String?  @db.Text
+  permissions Json?
+  createdAt   DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.DateTime(0)
+  
+  // Relations
+  users       User[]
+  
+  @@map("roles")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  LOCKED
+}
+
+// ===== 合同管理模块 =====
+
+model Contract {
+  id            Int           @id @default(autoincrement())
+  contractNo    String        @unique @map("contract_no") @db.VarChar(50)
+  title         String        @db.VarChar(255)
+  partyA        String        @map("party_a") @db.VarChar(255)
+  partyB        String        @map("party_b") @db.VarChar(255)
+  contractType  String?      @map("contract_type") @db.VarChar(50)
+  amount        Decimal?      @db.Decimal(15, 2)
+  signDate      DateTime?     @map("sign_date") @db.Date
+  effectiveDate DateTime?     @map("effective_date") @db.Date
+  expiryDate    DateTime?     @map("expiry_date") @db.Date
+  status        ContractStatus @default(DRAFT)
+  content       String?       @db.Text
+  filePath      String?       @map("file_path") @db.VarChar(500)
+  createdBy     Int           @map("created_by")
+  createdAt     DateTime      @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt     DateTime      @updatedAt @map("updated_at") @db.DateTime(0)
+  
+  // Relations
+  creator       User          @relation("ContractCreator", fields: [createdBy], references: [id])
+  approvals     ContractApproval[]
+  
+  @@index([contractNo])
+  @@index([status])
+  @@index([createdBy])
+  @@index([signDate, expiryDate])
+  @@map("contracts")
+}
+
+model ContractApproval {
+  id          Int         @id @default(autoincrement())
+  contractId  Int         @map("contract_id")
+  approverId  Int         @map("approver_id")
+  status      ApprovalStatus @default(PENDING)
+  comment     String?     @db.Text
+  approvedAt  DateTime?    @map("approved_at") @db.DateTime(0)
+  createdAt   DateTime    @default(now()) @map("created_at") @db.DateTime(0)
+  
+  // Relations
+  contract    Contract    @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  approver    User        @relation(fields: [approverId], references: [id])
+  
+  @@index([contractId])
+  @@index([approverId])
+  @@index([status])
+  @@map("contract_approvals")
+}
+
+enum ContractStatus {
+  DRAFT
+  REVIEWING
+  SIGNED
+  EXECUTING
+  COMPLETED
+  TERMINATED
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// ===== 案件管理模块 =====
+
+model Case {
+  id            Int       @id @default(autoincrement())
+  caseNo        String    @unique @map("case_no") @db.VarChar(50)
+  title         String    @db.VarChar(255)
+  caseType      CaseType
+  plaintiff     String?   @db.Text
+  defendant     String?   @db.Text
+  court         String?   @db.VarChar(255)
+  filingDate    DateTime?  @map("filing_date") @db.Date
+  status        CaseStatus @default(PENDING)
+  description   String?   @db.Text
+  createdBy     Int
+  assignedTo    Int?      @map("assigned_to")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.DateTime(0)
+  
+  // Relations
+  creator       User       @relation("CaseCreator", fields: [createdBy], references: [id])
+  assignee      User?      @relation("CaseAssignee", fields: [assignedTo], references: [id])
+  timeline      CaseTimeline[]
+  
+  @@index([caseNo])
+  @@index([status])
+  @@index([createdBy])
+  @@index([assignedTo])
+  @@map("cases")
+}
+
+model CaseTimeline {
+  id          Int       @id @default(autoincrement())
+  caseId      Int       @map("case_id")
+  eventType   String    @map("event_type") @db.VarChar(50)
+  eventDate   DateTime  @map("event_date") @db.DateTime(0)
+  description String?   @db.Text
+  operatorId  Int       @map("operator_id")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.DateTime(0)
+  
+  // Relations
+  caseObj     Case       @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  operator    User       @relation(fields: [operatorId], references: [id])
+  
+  @@index([caseId])
+  @@index([eventDate])
+  @@map("case_timeline")
+}
+
+enum CaseType {
+  CIVIL
+  ADMINISTRATIVE
+  CRIMINAL
+  ARBITRATION
+}
+
+enum CaseStatus {
+  PENDING
+  TRIAL
+  APPEAL
+  ENFORCEMENT
+  CLOSED
+}
+
+// ===== AI Agent 管理模块 =====
+
+model Agent {
+  id                Int       @id @default(autoincrement())
+  agentName         String    @unique @map("agent_name") @db.VarChar(100)
+  agentType         AgentType @map("agent_type")
+  apiEndpoint       String?   @map("api_endpoint") @db.VarChar(500)
+  apiKeyEncrypted   String?   @map("api_key_encrypted") @db.VarChar(500)
+  capabilities      Json?
+  status            AgentStatus @default(ACTIVE)
+  ownerId           Int       @map("owner_id")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.DateTime(0)
+  
+  // Relations
+  owner             User      @relation(fields: [ownerId], references: [id])
+  tasks             Task[]
+  
+  @@map("agents")
+}
+
+enum AgentType {
+  HUMAN
+  AI
+  EXPERT
+}
+
+enum AgentStatus {
+  ACTIVE
+  INACTIVE
+  BUSY
+}
+
+// ===== 任务管理模块 =====
+
+model Task {
+  id             Int       @id @default(autoincrement())
+  taskType       String    @map("task_type") @db.VarChar(50)
+  title          String    @db.VarChar(255)
+  description    String?   @db.Text
+  assignerId     Int       @map("assigner_id")
+  assigneeId     Int       @map("assignee_id")
+  assigneeType   AssigneeType
+  priority       Priority   @default(MEDIUM)
+  status         TaskStatus @default(PENDING)
+  taskData       Json?     @map("task_data")
+  result         Json?
+  dueDate        DateTime?  @map("due_date") @db.DateTime(0)
+  completedAt    DateTime?  @map("completed_at") @db.DateTime(0)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.DateTime(0)
+  
+  // Relations
+  assigner       User      @relation("TaskCreator", fields: [assignerId], references: [id])
+  assignee       User      @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  agent           Agent?    @relation(fields: [assigneeId], references: [id])
+  
+  @@index([status])
+  @@index([assigneeId])
+  @@index([dueDate])
+  @@map("task_assignments")
+}
+
+enum AssigneeType {
+  HUMAN
+  AI
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+// ===== 服务产品与订单模块 =====
+
+model ServiceProduct {
+  id           Int       @id @default(autoincrement())
+  name         String    @db.VarChar(200)
+  description  String?   @db.Text
+  price        Decimal   @db.Decimal(10, 2)
+  pricingUnit  PricingUnit @map("pricing_unit")
+  category     String?   @db.VarChar(50)
+  isPublished  Boolean   @default(false) @map("is_published")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.DateTime(0)
+  
+  // Relations
+  orders       Order[]
+  
+  @@map("service_products")
+}
+
+model Order {
+  id              Int       @id @default(autoincrement())
+  orderNo         String    @unique @map("order_no") @db.VarChar(50)
+  customerName    String    @map("customer_name") @db.VarChar(100)
+  customerPhone   String?   @map("customer_phone") @db.VarChar(20)
+  customerEmail   String?   @map("customer_email") @db.VarChar(100)
+  productId       Int       @map("product_id")
+  amount          Decimal   @db.Decimal(10, 2)
+  status          OrderStatus @default(PENDING)
+  paymentMethod   String?   @map("payment_method") @db.VarChar(50)
+  paidAt          DateTime?  @map("paid_at") @db.DateTime(0)
+  assignedAgentId Int?      @map("assigned_agent_id")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.DateTime(0)
+  
+  // Relations
+  product         ServiceProduct @relation(fields: [productId], references: [id])
+  assignedAgent   Agent?         @relation(fields: [assignedAgentId], references: [id])
+  
+  @@index([orderNo])
+  @@index([status])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+enum PricingUnit {
+  PER_HOUR
+  PER_CASE
+  PER_MONTH
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  COMPLETED
+  REFUNDED
+  CANCELLED
+}
