@@ -22,7 +22,7 @@ import {
   CloseCircleOutlined,
 } from '@ant-design/icons';
 import useContractStore from '../../stores/contractStore';
-import contractService from '../../services/contract';
+import contractService from '../../services/contractService';
 import { Contract, ContractStatus, ApprovalRecord } from '../../types/api';
 
 const { TextArea } = Input;
