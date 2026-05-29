@@ -1,4 +1,4 @@
-// 公司法务智慧管理系统 - 认证中间件
+﻿// 公司法务智慧管理系统 - 认证中间件
 // 功能: JWT Token 验证、权限检查
 
 import { Request, Response, NextFunction } from 'express';
@@ -60,15 +60,17 @@ export async function authenticateToken(req: Request, res: Response, next: NextF
       };
       
       next();
+      return;
     });
-    
   } catch (error) {
     console.error('Token 验证失败:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Internal Server Error',
       message: '服务器内部错误'
     });
   }
+
+  return;
 }
 
 // 权限检查中间件工厂
@@ -124,7 +126,7 @@ export function checkPermission(requiredPermission: string) {
 }
 
 // 可选认证中间件（不强制要求登录）
-export async function optionalAuth(req: Request, res: Response, next: NextFunction) {
+export async function optionalAuth(req: Request, _res: Response, next: NextFunction) {
   try {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];

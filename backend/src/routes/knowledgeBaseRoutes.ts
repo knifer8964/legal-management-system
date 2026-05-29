@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate, authorize } from '../middleware/authMiddleware';
+import { authenticateToken } from '../middleware';
 import {
   getKnowledgeBases,
   getKnowledgeBaseById,
@@ -13,7 +13,7 @@ import {
 const router = Router();
 
 // 所有接口需要认证
-router.use(authenticate);
+router.use(authenticateToken);
 
 // 查询知识库列表
 router.get('/', getKnowledgeBases);

@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+﻿import { Request, Response, NextFunction } from 'express';
 import { PrismaClient } from '@prisma/client';
 import fs from 'fs/promises';
 import path from 'path';
@@ -25,7 +25,7 @@ export async function getKnowledgeBases(req: Request, res: Response, next: NextF
 
     res.json({ code: 0, data: kbs });
   } catch (err) {
-    next(err);
+    return next(err);
   }
 }
 
@@ -47,7 +47,7 @@ export async function getKnowledgeBaseById(req: Request, res: Response, next: Ne
     if (!kb) return res.status(404).json({ code: 404, message: '知识库不存在' });
     res.json({ code: 0, data: kb });
   } catch (err) {
-    next(err);
+    return next(err);
   }
 }
 
@@ -74,7 +74,7 @@ export async function createKnowledgeBase(req: Request, res: Response, next: Nex
 
     res.status(201).json({ code: 0, data: kb, message: '知识库创建成功' });
   } catch (err) {
-    next(err);
+    return next(err);
   }
 }
 
@@ -97,7 +97,7 @@ export async function updateKnowledgeBase(req: Request, res: Response, next: Nex
     const kb = await prisma.knowledgeBase.update({ where: { id }, data: updateData });
     res.json({ code: 0, data: kb, message: '知识库更新成功' });
   } catch (err) {
-    next(err);
+    return next(err);
   }
 }
 
@@ -111,7 +111,7 @@ export async function deleteKnowledgeBase(req: Request, res: Response, next: Nex
     await prisma.knowledgeBase.delete({ where: { id } });
     res.json({ code: 0, message: '知识库删除成功' });
   } catch (err) {
-    next(err);
+    return next(err);
   }
 }
 
@@ -131,7 +131,6 @@ export async function uploadDocument(req: Request, res: Response, next: NextFunc
     // 保存文件到本地存储
     const uploadDir = path.join(__dirname, '../../uploads/knowledge-bases', String(kbId));
     await fs.mkdir(uploadDir, { recursive: true });
-    const filePath = path.join(uploadDir, file.filename);
 
     // TODO: 这里应该调用文件处理服务（提取文本、分块、向量化）
     // 暂时只保存文件信息到数据库
@@ -149,7 +148,7 @@ export async function uploadDocument(req: Request, res: Response, next: NextFunc
 
     res.status(201).json({ code: 0, data: doc, message: '文档上传成功，等待处理' });
   } catch (err) {
-    next(err);
+    return next(err);
   }
 }
 
@@ -182,6 +181,6 @@ export async function searchKnowledgeBase(req: Request, res: Response, next: Nex
 
     res.json({ code: 0, data: chunks, message: '文本搜索结果（向量搜索待实现）' });
   } catch (err) {
-    next(err);
+    return next(err);
   }
 }

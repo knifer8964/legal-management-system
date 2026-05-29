@@ -1,8 +1,8 @@
 // 公司法务智慧管理系统 - 合同管理路由
-// 功能: 合同CRUD、审批流程、风险检查
+// 功能: 合同CRUD、审批流程、参数验证
 
 import { Router, Request, Response } from 'express';
-import { authenticateToken, checkPermission } from '../middleware/authMiddleware';
+import { authenticateToken, checkPermission, validate, contractSchemas, uploadDocument, handleMulterError } from '../middleware';
 import {
   getContracts,
   getContractById,
@@ -15,20 +15,14 @@ import {
 
 const router = Router();
 
-// 获取合同列表（支持分页、筛选、搜索）
+// 获取合同列表
 router.get(
   '/',
   authenticateToken,
   checkPermission('contracts:read'),
+  validate(contractSchemas.list),
   async (req: Request, res: Response) => {
-    try {
-      await getContracts(req, res);
-    } catch (error) {
-      res.status(500).json({
-        error: 'Internal Server Error',
-        message: '服务器内部错误'
-      });
-    }
+    await getContracts(req, res);
   }
 );
 
@@ -38,14 +32,7 @@ router.get(
   authenticateToken,
   checkPermission('contracts:read'),
   async (req: Request, res: Response) => {
-    try {
-      await getContractById(req, res);
-    } catch (error) {
-      res.status(500).json({
-        error: 'Internal Server Error',
-        message: '服务器内部错误'
-      });
-    }
+    await getContractById(req, res);
   }
 );
 
@@ -54,15 +41,33 @@ router.post(
   '/',
   authenticateToken,
   checkPermission('contracts:write'),
+  validate(contractSchemas.create),
   async (req: Request, res: Response) => {
-    try {
-      await createContract(req, res);
-    } catch (error) {
-      res.status(500).json({
-        error: 'Internal Server Error',
-        message: '服务器内部错误'
-      });
+    await createContract(req, res);
+  }
+);
+
+// 上传合同附件
+router.post(
+  '/:id/upload',
+  authenticateToken,
+  checkPermission('contracts:write'),
+  uploadDocument.single('file'),
+  handleMulterError,
+  async (req: Request, res: Response) => {
+    if (!(req as any).file) {
+      return res.status(400).json({ success: false, error: { code: 'BAD_REQUEST', message: '请选择文件' } });
     }
+    const file = (req as any).file;
+    return res.json({
+      success: true,
+      data: {
+        filename: file.filename,
+        originalName: file.originalname,
+        size: file.size,
+        mimetype: file.mimetype,
+      },
+    });
   }
 );
 
@@ -71,15 +76,9 @@ router.put(
   '/:id',
   authenticateToken,
   checkPermission('contracts:write'),
+  validate(contractSchemas.update),
   async (req: Request, res: Response) => {
-    try {
-      await updateContract(req, res);
-    } catch (error) {
-      res.status(500).json({
-        error: 'Internal Server Error',
-        message: '服务器内部错误'
-      });
-    }
+    await updateContract(req, res);
   }
 );
 
@@ -89,31 +88,18 @@ router.post(
   authenticateToken,
   checkPermission('contracts:write'),
   async (req: Request, res: Response) => {
-    try {
-      await submitForApproval(req, res);
-    } catch (error) {
-      res.status(500).json({
-        error: 'Internal Server Error',
-        message: '服务器内部错误'
-      });
-    }
+    await submitForApproval(req, res);
   }
 );
 
 // 审批合同
 router.post(
-  '/:id/approve/:approvalId',
+  '/:id/approve',
   authenticateToken,
   checkPermission('contracts:approve'),
+  validate(contractSchemas.approve),
   async (req: Request, res: Response) => {
-    try {
-      await approveContract(req, res);
-    } catch (error) {
-      res.status(500).json({
-        error: 'Internal Server Error',
-        message: '服务器内部错误'
-      });
-    }
+    await approveContract(req, res);
   }
 );
 
@@ -123,14 +109,7 @@ router.delete(
   authenticateToken,
   checkPermission('contracts:delete'),
   async (req: Request, res: Response) => {
-    try {
-      await deleteContract(req, res);
-    } catch (error) {
-      res.status(500).json({
-        error: 'Internal Server Error',
-        message: '服务器内部错误'
-      });
-    }
+    await deleteContract(req, res);
   }
 );
 

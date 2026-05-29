@@ -78,7 +78,7 @@ export async function getContracts(req: Request, res: Response) {
       prisma.contract.count({ where })
     ]);
     
-    res.json({
+    return res.json({
       message: '查询成功',
       data: contracts,
       pagination: {
@@ -91,7 +91,7 @@ export async function getContracts(req: Request, res: Response) {
     
   } catch (error) {
     logger.error('获取合同列表失败', { error: (error as Error).message });
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Internal Server Error',
       message: '服务器内部错误'
     });
@@ -127,14 +127,14 @@ export async function getContractById(req: Request, res: Response) {
       });
     }
     
-    res.json({
+    return res.json({
       message: '查询成功',
       data: contract
     });
     
   } catch (error) {
     logger.error('获取合同详情失败', { error: (error as Error).message, contractId: req.params.id });
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Internal Server Error',
       message: '服务器内部错误'
     });
@@ -199,7 +199,7 @@ export async function createContract(req: Request, res: Response) {
         signDate: signDate ? new Date(signDate) : null,
         effectiveDate: effectiveDate ? new Date(effectiveDate) : null,
         expiryDate: expiryDate ? new Date(expiryDate) : null,
-        status: 'draft',
+        status: 'DRAFT',
         content,
         createdBy: userId
       },
@@ -216,14 +216,14 @@ export async function createContract(req: Request, res: Response) {
       creatorId: userId
     });
     
-    res.status(201).json({
+    return res.status(201).json({
       message: '合同创建成功',
       data: newContract
     });
     
   } catch (error) {
     logger.error('创建合同失败', { error: (error as Error).message });
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Internal Server Error',
       message: '服务器内部错误'
     });
@@ -262,7 +262,7 @@ export async function updateContract(req: Request, res: Response) {
     }
     
     // 检查权限（只有创建者或管理员可修改草稿）
-    if (existing.status !== 'draft' && existing.createdBy !== userId) {
+    if (existing.status !== 'DRAFT' && existing.createdBy !== userId) {
       return res.status(403).json({
         error: 'Forbidden',
         message: '只有草稿状态且创建者本人可修改'
@@ -297,14 +297,14 @@ export async function updateContract(req: Request, res: Response) {
       operatorId: userId
     });
     
-    res.json({
+    return res.json({
       message: '合同更新成功',
       data: updated
     });
     
   } catch (error) {
     logger.error('更新合同失败', { error: (error as Error).message, contractId: req.params.id });
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Internal Server Error',
       message: '服务器内部错误'
     });
@@ -331,7 +331,7 @@ export async function submitForApproval(req: Request, res: Response) {
       });
     }
     
-    if (contract.status !== 'draft') {
+    if (contract.status !== 'DRAFT') {
       return res.status(400).json({
         error: 'Bad Request',
         message: '只有草稿状态可提交审批'
@@ -348,15 +348,15 @@ export async function submitForApproval(req: Request, res: Response) {
     // 更新合同状态
     await prisma.contract.update({
       where: { id: parseInt(id) },
-      data: { status: 'reviewing' }
+      data: { status: 'REVIEWING' }
     });
     
     // 创建审批记录
-    const approvals = await prisma.contractApproval.createMany({
+    await prisma.contractApproval.createMany({
       data: approverIds.map((approverId: number) => ({
         contractId: parseInt(id),
         approverId,
-        status: 'pending'
+        status: 'PENDING'
       }))
     });
     
@@ -367,7 +367,7 @@ export async function submitForApproval(req: Request, res: Response) {
       approverIds
     });
     
-    res.json({
+    return res.json({
       message: '合同已提交审批',
       data: {
         contractId: contract.id,
@@ -377,7 +377,7 @@ export async function submitForApproval(req: Request, res: Response) {
     
   } catch (error) {
     logger.error('提交审批失败', { error: (error as Error).message, contractId: req.params.id });
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Internal Server Error',
       message: '服务器内部错误'
     });
@@ -419,7 +419,7 @@ export async function approveContract(req: Request, res: Response) {
       });
     }
     
-    if (approval.status !== 'pending') {
+    if (approval.status !== 'PENDING') {
       return res.status(400).json({
         error: 'Bad Request',
         message: '已审批，不可重复操作'
@@ -441,20 +441,20 @@ export async function approveContract(req: Request, res: Response) {
       where: { contractId: parseInt(id) }
     });
     
-    const allApproved = allApprovals.every(a => a.status === 'approved');
-    const anyRejected = allApprovals.some(a => a.status === 'rejected');
+    const allApproved = allApprovals.every(a => a.status === 'APPROVED');
+    const anyRejected = allApprovals.some(a => a.status === 'REJECTED');
     
-    let contractStatus = 'reviewing';
+    let contractStatus = 'REVIEWING';
     if (allApproved) {
-      contractStatus = 'signed'; // 所有审批通过，标记为已签署
+      contractStatus = 'SIGNED'; // 所有审批通过，标记为已签署
     } else if (anyRejected) {
-      contractStatus = 'draft'; // 有拒绝，退回草稿
+      contractStatus = 'DRAFT'; // 有拒绝，退回草稿
     }
     
     // 更新合同状态
     await prisma.contract.update({
       where: { id: parseInt(id) },
-      data: { status: contractStatus }
+      data: { status: contractStatus as any }
     });
     
     logger.info('合同审批完成', {
@@ -465,7 +465,7 @@ export async function approveContract(req: Request, res: Response) {
       contractStatus
     });
     
-    res.json({
+    return res.json({
       message: '审批操作成功',
       data: {
         contractId: parseInt(id),
@@ -476,7 +476,7 @@ export async function approveContract(req: Request, res: Response) {
     
   } catch (error) {
     logger.error('审批合同失败', { error: (error as Error).message, contractId: req.params.id });
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Internal Server Error',
       message: '服务器内部错误'
     });
@@ -500,7 +500,7 @@ export async function deleteContract(req: Request, res: Response) {
       });
     }
     
-    if (contract.status !== 'draft') {
+    if (contract.status !== 'DRAFT') {
       return res.status(400).json({
         error: 'Bad Request',
         message: '只有草稿状态可删除'
@@ -530,13 +530,13 @@ export async function deleteContract(req: Request, res: Response) {
       operatorId: userId
     });
     
-    res.json({
+    return res.json({
       message: '合同删除成功'
     });
     
   } catch (error) {
     logger.error('删除合同失败', { error: (error as Error).message, contractId: req.params.id });
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Internal Server Error',
       message: '服务器内部错误'
     });

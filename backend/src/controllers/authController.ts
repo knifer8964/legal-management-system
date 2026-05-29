@@ -47,7 +47,7 @@ export async function login(req: Request, res: Response) {
     }
     
     // 检查账号状态
-    if (user.status === 'inactive' || user.status === 'locked') {
+    if (user.status === 'INACTIVE' || user.status === 'LOCKED') {
       return res.status(403).json({
         error: 'Forbidden',
         message: '账号已被禁用或锁定，请联系管理员'
@@ -62,7 +62,7 @@ export async function login(req: Request, res: Response) {
         role: user.role.roleName
       },
       JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+      { expiresIn: '7d' }
     );
     
     // 更新最后登录时间
@@ -94,11 +94,13 @@ export async function login(req: Request, res: Response) {
     
   } catch (error) {
     logger.error('登录失败', { error: (error as Error).message });
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Internal Server Error',
       message: '服务器内部错误'
     });
   }
+
+  return;
 }
 
 // 用户注册（仅管理员可操作）
@@ -161,11 +163,13 @@ export async function register(req: Request, res: Response) {
     
   } catch (error) {
     logger.error('用户注册失败', { error: (error as Error).message });
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Internal Server Error',
       message: '服务器内部错误'
     });
   }
+
+  return;
 }
 
 // 验证 Token 中间件
@@ -191,15 +195,18 @@ export async function authenticateToken(req: Request, res: Response, next: Funct
       
       (req as any).user = user;
       next();
+      return;
     });
-    
+    return;
   } catch (error) {
     logger.error('Token 验证失败', { error: (error as Error).message });
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Internal Server Error',
       message: '服务器内部错误'
     });
   }
+
+  return;
 }
 
 // 检查权限中间件
@@ -238,12 +245,11 @@ export function checkPermission(requiredPermission: string) {
       next();
       
     } catch (error) {
-      logger.error('权限检查失败', { error: (error as Error).message });
-      res.status(500).json({
-        error: 'Internal Server Error',
-        message: '服务器内部错误'
-      });
-    }
+    return res.status(500).json({
+      error: 'Internal Server Error',
+      message: '服务器内部错误'
+    });
+  }
   };
 }
 
@@ -279,9 +285,11 @@ export async function getCurrentUser(req: Request, res: Response) {
     
   } catch (error) {
     logger.error('获取用户信息失败', { error: (error as Error).message });
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Internal Server Error',
       message: '服务器内部错误'
     });
   }
+
+  return;
 }

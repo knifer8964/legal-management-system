@@ -5,6 +5,7 @@ import { Router } from 'express';
 import authRoutes from './authRoutes';
 import contractRoutes from './contractRoutes';
 import agentRoutes from './agentRoutes';
+import knowledgeBaseRoutes from './knowledgeBaseRoutes';
 
 const router = Router();
 

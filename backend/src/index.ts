@@ -2,15 +2,16 @@
 // 创建时间: 2026-05-28
 // 技术栈: Node.js + Express + TypeScript + Prisma
 
-import express, { Express, Request, Response, NextFunction } from 'express';
+import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 import redis from 'redis';
-import jwt from 'jsonwebtoken';
 import winston from 'winston';
 import rateLimit from 'express-rate-limit';
+import { errorHandler, notFoundHandler, requestTracker, requestLogger } from './middleware';
+import routes from './routes';
 
 // 加载环境变量
 dotenv.config();
@@ -54,14 +55,9 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// 请求日志
-app.use((req: Request, res: Response, next: NextFunction) => {
-  logger.info(`${req.method} ${req.path}`, {
-    ip: req.ip,
-    userAgent: req.get('user-agent')
-  });
-  next();
-});
+// 请求追踪与日志
+app.use(requestTracker);
+app.use(requestLogger);
 
 // 限流中间件
 const limiter = rateLimit({
@@ -72,7 +68,7 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // 健康检查
-app.get('/health', (req: Request, res: Response) => {
+app.get('/health', (_req: Request, res: Response) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
@@ -81,42 +77,12 @@ app.get('/health', (req: Request, res: Response) => {
   });
 });
 
-// API 路由（待实现）
-app.get('/api/v1', (req: Request, res: Response) => {
-  res.json({
-    message: '公司法务智慧管理系统 API v1.0',
-    endpoints: {
-      auth: '/api/v1/auth',
-      users: '/api/v1/users',
-      contracts: '/api/v1/contracts',
-      cases: '/api/v1/cases',
-      agents: '/api/v1/agents',
-      tasks: '/api/v1/tasks'
-    }
-  });
-});
+// API 路由
+app.use('/api/v1', routes);
 
-// 404 处理
-app.use((req: Request, res: Response) => {
-  res.status(404).json({
-    error: 'Not Found',
-    message: `Cannot ${req.method} ${req.path}`,
-    timestamp: new Date().toISOString()
-  });
-});
-
-// 全局错误处理
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  logger.error('Unhandled error', { error: err.message, stack: err.stack });
-  
-  res.status(500).json({
-    error: 'Internal Server Error',
-    message: process.env.NODE_ENV === 'production' 
-      ? '服务器内部错误' 
-      : err.message,
-    timestamp: new Date().toISOString()
-  });
-});
+// 404 + 错误处理
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 // 启动服务器
 async function startServer() {

@@ -24,7 +24,7 @@ export async function getAgents(req: Request, res: Response, next: NextFunction)
 
     res.json({ code: 0, data: agents });
   } catch (err) {
-    next(err);
+    return next(err);
   }
 }
 
@@ -37,13 +37,13 @@ export async function getAgentById(req: Request, res: Response, next: NextFuncti
     const id = Number(req.params.id);
     const agent = await prisma.agent.findUnique({
       where: { id },
-      include: { owner: { select: { id: true, realName: true, username: true } },
+      include: { owner: { select: { id: true, realName: true, username: true } } },
     });
 
     if (!agent) return res.status(404).json({ code: 404, message: 'Agent 不存在' });
     res.json({ code: 0, data: agent });
   } catch (err) {
-    next(err);
+    return next(err);
   }
 }
 
@@ -74,7 +74,7 @@ export async function createAgent(req: Request, res: Response, next: NextFunctio
     // 加密 apiKey（简单 AES-256-CBC 示例，生产环境用专业 KMS）
     let encryptedKey: string | undefined;
     if (apiKeyEncrypted) {
-      const cipher = crypto.createCipheriv('aes-256-cbc', process.env.API_KEY_SECRET!,.concat('0'.repeat(16)).slice(0, 16));
+      const cipher = crypto.createCipheriv('aes-256-cbc', (process.env.API_KEY_SECRET || 'default-secret-key').padEnd(16, '0').slice(0, 16), Buffer.alloc(16, 0));
       encryptedKey = cipher.update(apiKeyEncrypted, 'utf8', 'hex') + cipher.final('hex');
     }
 
@@ -91,7 +91,7 @@ export async function createAgent(req: Request, res: Response, next: NextFunctio
 
     res.status(201).json({ code: 0, data: agent, message: 'Agent 创建成功' });
   } catch (err) {
-    next(err);
+    return next(err);
   }
 }
 
@@ -110,7 +110,7 @@ export async function updateAgent(req: Request, res: Response, next: NextFunctio
     if (apiEndpoint !== undefined) updateData.apiEndpoint = apiEndpoint;
     if (apiKeyEncrypted !== undefined) {
       // 重新加密
-      const cipher = crypto.createCipheriv('aes-256-cbc', process.env.API_KEY_SECRET!,.concat('0'.repeat(16)).slice(0, 16));
+      const cipher = crypto.createCipheriv('aes-256-cbc', (process.env.API_KEY_SECRET || 'default-secret-key').padEnd(16, '0').slice(0, 16), Buffer.alloc(16, 0));
       updateData.apiKeyEncrypted = cipher.update(apiKeyEncrypted, 'utf8', 'hex') + cipher.final('hex');
     }
     if (capabilities !== undefined) updateData.capabilities = JSON.parse(capabilities);
@@ -119,7 +119,7 @@ export async function updateAgent(req: Request, res: Response, next: NextFunctio
     const agent = await prisma.agent.update({ where: { id }, data: updateData });
     res.json({ code: 0, data: agent, message: 'Agent 更新成功' });
   } catch (err) {
-    next(err);
+    return next(err);
   }
 }
 
@@ -133,7 +133,7 @@ export async function deleteAgent(req: Request, res: Response, next: NextFunctio
     await prisma.agent.delete({ where: { id } });
     res.json({ code: 0, message: 'Agent 删除成功' });
   } catch (err) {
-    next(err);
+    return next(err);
   }
 }
 
@@ -177,6 +177,6 @@ export async function testAgent(req: Request, res: Response, next: NextFunction)
       });
     }
   } catch (err) {
-    next(err);
+    return next(err);
   }
 }

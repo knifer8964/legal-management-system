@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate, authorize } from '../middleware/authMiddleware';
+import { authenticateToken, checkPermission } from '../middleware';
 import {
   getAgents,
   getAgentById,
@@ -12,7 +12,7 @@ import {
 const router = Router();
 
 // 所有接口需要认证
-router.use(authenticate);
+router.use(authenticateToken);
 
 // 查询 Agent 列表（所有角色可查看）
 router.get('/', getAgents);
@@ -21,13 +21,13 @@ router.get('/', getAgents);
 router.get('/:id', getAgentById);
 
 // 创建 Agent（需要 ADMIN 或 LAWYER 角色）
-router.post('/', authorize(['ADMIN', 'LAWYER']), createAgent);
+router.post('/', checkPermission('agents:write'), createAgent);
 
 // 更新 Agent（需要 ADMIN 或 LAWYER 角色）
-router.put('/:id', authorize(['ADMIN', 'LAWYER']), updateAgent);
+router.put('/:id', checkPermission('agents:write'), updateAgent);
 
 // 删除 Agent（需要 ADMIN 角色）
-router.delete('/:id', authorize(['ADMIN']), deleteAgent);
+router.delete('/:id', checkPermission('agents:delete'), deleteAgent);
 
 // 测试 Agent 连通性
 router.post('/:id/test', testAgent);
