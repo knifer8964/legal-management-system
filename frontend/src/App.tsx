@@ -1,35 +1,54 @@
-import React from 'react'
-import { Routes, Route } from 'react-router-dom'
-import { Layout } from 'antd'
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { ConfigProvider } from 'antd';
+import zhCN from 'antd/locale/zh_CN';
+import useAuthStore from './stores/authStore';
+import AppLayout from './layouts/AppLayout';
+import LoginPage from './pages/LoginPage';
+import DashboardPage from './pages/DashboardPage';
+import ContractListPage from './pages/ContractListPage';
+import ContractFormPage from './pages/ContractFormPage';
+import ContractDetailPage from './pages/ContractDetailPage';
 
-const { Content } = Layout
+// 路由守卫组件
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated } = useAuthStore();
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return <>{children}</>;
+};
 
-function App() {
+const App: React.FC = () => {
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Content style={{ padding: '24px' }}>
+    <ConfigProvider locale={zhCN}>
+      <BrowserRouter>
         <Routes>
-          {/* TODO: 后续添加路由配置 */}
-          {/* <Route path="/login" element={<Login />} /> */}
-          {/* <Route path="/" element={<MainLayout />}> */}
-          {/*   <Route index element={<Dashboard />} /> */}
-          {/*   <Route path="contracts" element={<ContractList />} /> */}
-          {/*   <Route path="cases" element={<CaseList />} /> */}
-          {/*   <Route path="agents" element={<AgentList />} /> */}
-          {/* </Route> */}
+          <Route path="/login" element={<LoginPage />} />
+          
           <Route
             path="/"
             element={
-              <div style={{ textAlign: 'center', padding: '100px' }}>
-                <h1>公司法务智慧管理系统</h1>
-                <p>框架搭建完成，正在开发中...</p>
-              </div>
+              <ProtectedRoute>
+                <AppLayout />
+              </ProtectedRoute>
             }
-          />
+          >
+            <Route index element={<Navigate to="/dashboard" replace />} />
+            <Route path="dashboard" element={<DashboardPage />} />
+            <Route path="contracts" element={<ContractListPage />} />
+            <Route path="contracts/create" element={<ContractFormPage />} />
+            <Route path="contracts/:id" element={<ContractDetailPage />} />
+            <Route path="contracts/:id/edit" element={<ContractFormPage />} />
+          </Route>
+          
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </Content>
-    </Layout>
-  )
-}
+      </BrowserRouter>
+    </ConfigProvider>
+  );
+};
 
-export default App
+export default App;
