@@ -73,11 +73,15 @@ export interface Contract {
   approvals?: ApprovalRecord[];
 }
 
-// 合同列表查询参数
-export interface ContractListParams {
+// 通用分页参数
+export interface PaginationParams {
   page: number;
   pageSize: number;
   keyword?: string;
+}
+
+// 合同列表查询参数
+export interface ContractListParams extends PaginationParams {
   status?: ContractStatus;
 }
 
@@ -93,6 +97,43 @@ export interface PaginatedResponse<T> {
 export interface ApproveRequest {
   status: 'APPROVED' | 'REJECTED';
   comment?: string;
+}
+
+// 仪表盘统计
+export interface DashboardStats {
+  totalContracts: number;
+  activeContracts: number;
+  pendingApprovals: number;
+  totalUsers: number;
+  recentContracts: Contract[];
+}
+
+export interface ContractStats {
+  total: number;
+  byStatus: Record<string, number>;
+  byType: Record<string, number>;
+  monthlyTrend: { month: string; count: number }[];
+}
+
+export interface CaseStats {
+  total: number;
+  byStatus: Record<string, number>;
+  byType: Record<string, number>;
+}
+
+// 用户状态枚举
+export enum UserStatus {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  SUSPENDED = 'SUSPENDED'
+}
+
+// 角色类型
+export interface Role {
+  id: number;
+  name: string;
+  code: string;
+  description?: string;
 }
 
 // 审批记录
