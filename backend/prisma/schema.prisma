@@ -1,4 +1,4 @@
-// Prisma Schema for Legal Management System
+﻿// Prisma Schema for Legal Management System
 // Database: MySQL 8.0+
 // ORM: Prisma v5.7+
 // FIXED VERSION: Corrected syntax errors in Order model and enums
@@ -328,4 +328,84 @@ enum OrderStatus {
   COMPLETED
   REFUNDED
   CANCELLED
+}
+
+// ===== 知识库模块 =====
+
+model KnowledgeBase {
+  id           Int       @id @default(autoincrement())
+  name         String    @db.VarChar(200)
+  description  String?   @db.Text
+  kbType       KbType    @default(PRIVATE)
+  ownerId      Int       @map("owner_id")
+  isPublished  Boolean   @default(false) @map("is_published")
+  config       Json?
+  createdAt    DateTime  @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.DateTime(0)
+  
+  // Relations
+  owner        User       @relation(fields: [ownerId], references: [id])
+  documents    Document[]
+  
+  @@index([ownerId])
+  @@index([kbType])
+  @@map("knowledge_bases")
+}
+
+enum KbType {
+  PRIVATE
+  TEAM
+  PUBLIC
+}
+
+model Document {
+  id            Int        @id @default(autoincrement())
+  kbId          Int        @map("kb_id")
+  title         String     @db.VarChar(500)
+  filePath      String?    @map("file_path") @db.VarChar(500)
+  fileType      String?    @map("file_type") @db.VarChar(50)
+  fileSize      Int?       @map("file_size")
+  content       String?    @db.Text
+  status        DocStatus  @default(UPLOADED)
+  chunkCount    Int        @default(0) @map("chunk_count")
+  uploadedById  Int        @map("uploaded_by_id")
+  createdAt     DateTime   @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt     DateTime   @updatedAt @map("updated_at") @db.DateTime(0)
+  
+  // Relations
+  knowledgeBase  KnowledgeBase @relation(fields: [kbId], references: [id], onDelete: Cascade)
+  uploadedBy    User         @relation(fields: [uploadedById], references: [id])
+  chunks        DocumentChunk[]
+  
+  @@index([kbId])
+  @@index([uploadedById])
+  @@index([status])
+  @@map("documents")
+}
+
+enum DocStatus {
+  UPLOADED
+  PROCESSING
+  PROCESSED
+  FAILED
+}
+
+model DocumentChunk {
+  id           Int      @id @default(autoincrement())
+  documentId   Int      @map("document_id")
+  kbId         Int      @map("kb_id")
+  chunkIndex    Int      @map("chunk_index")
+  content      String   @db.Text
+  embedding    Bytes?
+  metadata     Json?
+  createdAt    DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  
+  // Relations
+  document      Document      @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  knowledgeBase KnowledgeBase @relation(fields: [kbId], references: [id], onDelete: Cascade)
+  
+  @@index([documentId])
+  @@index([kbId])
+  @@unique([chunkIndex, documentId])
+  @@map("document_chunks")
 }
