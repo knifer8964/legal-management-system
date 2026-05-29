@@ -33,7 +33,7 @@
     "qrcode": "^1.5.3",
     "pdf-lib": "^1.17.1",
     "mammoth": "^1.6.0",
-    "node-python-func": "^2.1.0"
+    "multer": "^1.4.5-lts.1"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
@@ -50,7 +50,7 @@
     "eslint": "^8.56.0",
     "@typescript-eslint/parser": "^6.15.0",
     "@typescript-eslint/eslint-plugin": "^6.15.0",
-    "prisma": "^5.7.1",
-    "@prisma/client": "^5.7.1"
+    "prisma": "5.22.0",
+    "@prisma/client": "5.22.0"
   }
 }

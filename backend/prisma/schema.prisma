@@ -1,4 +1,4 @@
-﻿// Prisma Schema for Legal Management System
+// Prisma Schema for Legal Management System
 // Database: MySQL 8.0+
 // ORM: Prisma v5.7+
 // FIXED VERSION: Corrected syntax errors in Order model and enums
@@ -29,11 +29,17 @@ model User {
   updatedAt     DateTime  @updatedAt @map("updated_at") @db.DateTime(0)
   
   // Relations
-  role          Role      @relation(fields: [roleId], references: [id])
-  contracts     Contract[] @relation("ContractCreator")
-  cases         Case[]     @relation("CaseCreator")
-  tasksAssigned Task[]     @relation("TaskAssignee")
-  tasksCreated  Task[]     @relation("TaskCreator")
+  role              Role      @relation(fields: [roleId], references: [id])
+  contracts         Contract[] @relation("ContractCreator")
+  cases             Case[]     @relation("CaseCreator")
+  caseAssignments   Case[]     @relation("CaseAssignee")
+  tasksAssigned     Task[]     @relation("TaskAssignee")
+  tasksCreated      Task[]     @relation("TaskCreator")
+  contractApprovals ContractApproval[] @relation("ContractApprover")
+  caseTimelineOps   CaseTimeline[] @relation("CaseTimelineOperator")
+  ownedAgents       Agent[]   @relation("AgentOwner")
+  knowledgeBases    KnowledgeBase[] @relation("KBOwner")
+  uploadedDocuments Document[] @relation("DocUploader")
   
   @@index([username])
   @@index([email])
@@ -103,7 +109,7 @@ model ContractApproval {
   
   // Relations
   contract    Contract    @relation(fields: [contractId], references: [id], onDelete: Cascade)
-  approver    User        @relation(fields: [approverId], references: [id])
+  approver    User        @relation("ContractApprover", fields: [approverId], references: [id])
   
   @@index([contractId])
   @@index([approverId])
@@ -167,7 +173,7 @@ model CaseTimeline {
   
   // Relations
   caseObj     Case       @relation(fields: [caseId], references: [id], onDelete: Cascade)
-  operator    User       @relation(fields: [operatorId], references: [id])
+  operator    User       @relation("CaseTimelineOperator", fields: [operatorId], references: [id])
   
   @@index([caseId])
   @@index([eventDate])
@@ -204,8 +210,9 @@ model Agent {
   updatedAt         DateTime  @updatedAt @map("updated_at") @db.DateTime(0)
   
   // Relations
-  owner             User      @relation(fields: [ownerId], references: [id])
-  tasks             Task[]
+  owner             User      @relation("AgentOwner", fields: [ownerId], references: [id])
+  agentTasks        Task[]    @relation("TaskAgent")
+  assignedOrders    Order[]   @relation("OrderAgent")
   
   @@map("agents")
 }
@@ -231,6 +238,7 @@ model Task {
   description    String?   @db.Text
   assignerId     Int       @map("assigner_id")
   assigneeId     Int       @map("assignee_id")
+  agentId        Int?      @map("agent_id")
   assigneeType   AssigneeType
   priority       Priority   @default(MEDIUM)
   status         TaskStatus @default(PENDING)
@@ -244,7 +252,7 @@ model Task {
   // Relations
   assigner       User      @relation("TaskCreator", fields: [assignerId], references: [id])
   assignee       User      @relation("TaskAssignee", fields: [assigneeId], references: [id])
-  agent           Agent?    @relation(fields: [assigneeId], references: [id])
+  agent          Agent?    @relation("TaskAgent", fields: [agentId], references: [id])
   
   @@index([status])
   @@index([assigneeId])
@@ -307,7 +315,7 @@ model Order {
   
   // Relations
   product         ServiceProduct @relation(fields: [productId], references: [id])
-  assignedAgent   Agent?         @relation(fields: [assignedAgentId], references: [id])
+  assignedAgent   Agent?         @relation("OrderAgent", fields: [assignedAgentId], references: [id])
   
   @@index([orderNo])
   @@index([status])
@@ -344,8 +352,9 @@ model KnowledgeBase {
   updatedAt    DateTime  @updatedAt @map("updated_at") @db.DateTime(0)
   
   // Relations
-  owner        User       @relation(fields: [ownerId], references: [id])
+  owner        User       @relation("KBOwner", fields: [ownerId], references: [id])
   documents    Document[]
+  chunks       DocumentChunk[] @relation("ChunkKB")
   
   @@index([ownerId])
   @@index([kbType])
@@ -374,7 +383,7 @@ model Document {
   
   // Relations
   knowledgeBase  KnowledgeBase @relation(fields: [kbId], references: [id], onDelete: Cascade)
-  uploadedBy    User         @relation(fields: [uploadedById], references: [id])
+  uploadedBy    User         @relation("DocUploader", fields: [uploadedById], references: [id])
   chunks        DocumentChunk[]
   
   @@index([kbId])
@@ -402,7 +411,7 @@ model DocumentChunk {
   
   // Relations
   document      Document      @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  knowledgeBase KnowledgeBase @relation(fields: [kbId], references: [id], onDelete: Cascade)
+  knowledgeBase KnowledgeBase @relation("ChunkKB", fields: [kbId], references: [id], onDelete: Cascade)
   
   @@index([documentId])
   @@index([kbId])

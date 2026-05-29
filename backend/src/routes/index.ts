@@ -4,16 +4,18 @@
 import { Router } from 'express';
 import authRoutes from './authRoutes';
 import contractRoutes from './contractRoutes';
+import agentRoutes from './agentRoutes';
 
 const router = Router();
 
 // API 版本 v1
 router.use('/auth', authRoutes);
 router.use('/contracts', contractRoutes);
+router.use('/agents', agentRoutes);
+router.use('/knowledge-bases', knowledgeBaseRoutes);
 
 // TODO: 后续添加其他路由模块
 // router.use('/cases', caseRoutes);
-// router.use('/agents', agentRoutes);
 // router.use('/tasks', taskRoutes);
 // router.use('/orders', orderRoutes);
 // router.use('/users', userRoutes);
