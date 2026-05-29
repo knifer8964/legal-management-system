@@ -10,10 +10,20 @@ import {
   updateContract,
   deleteContract,
   submitForApproval,
-  approveContract
+  approveContract,
+  getApprovers
 } from '../controllers/contractController';
 
 const router = Router();
+
+// 获取可用审批人列表
+router.get(
+  '/approvers',
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    await getApprovers(req, res);
+  }
+);
 
 // 获取合同列表
 router.get(

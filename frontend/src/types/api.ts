@@ -3,15 +3,27 @@ export interface ApiResponse<T = any> {
   success: boolean;
   data: T;
   message?: string;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  error?: {
+    code: string;
+    message: string;
+  };
 }
 
 // 用户类型
 export interface User {
-  id: string;
+  id: number;
   username: string;
   name: string;
   role: string;
+  permissions?: string[];
   avatar?: string;
+  email?: string;
 }
 
 // 登录请求
@@ -38,21 +50,27 @@ export enum ContractStatus {
 
 // 合同类型
 export interface Contract {
-  id: string;
+  id: number;
   contractNo: string;
   title: string;
   partyA: string;
   partyB: string;
   contractType: string;
-  amount: number;
-  signDate: string;
-  effectiveDate: string;
-  expiryDate: string;
-  content: string;
+  amount: number | null;
+  signDate: string | null;
+  effectiveDate: string | null;
+  expiryDate: string | null;
+  content: string | null;
   status: ContractStatus;
   createdAt: string;
   updatedAt: string;
-  createdBy: string;
+  createdBy: number;
+  creator?: {
+    id: number;
+    realName: string;
+    username: string;
+  };
+  approvals?: ApprovalRecord[];
 }
 
 // 合同列表查询参数
@@ -74,15 +92,20 @@ export interface PaginatedResponse<T> {
 // 审批请求
 export interface ApproveRequest {
   status: 'APPROVED' | 'REJECTED';
-  comment: string;
+  comment?: string;
 }
 
 // 审批记录
 export interface ApprovalRecord {
-  id: string;
-  contractId: string;
-  approver: string;
-  status: 'APPROVED' | 'REJECTED';
-  comment: string;
-  createdAt: string;
+  id: number;
+  contractId: number;
+  approverId: number;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  comment?: string;
+  approvedAt?: string;
+  approver?: {
+    id: number;
+    realName: string;
+    email?: string;
+  };
 }

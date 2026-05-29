@@ -3,7 +3,7 @@
 
 import { Router, Request, Response } from 'express';
 import { authenticateToken, checkPermission, validate, authSchemas } from '../middleware';
-import { login, register, getCurrentUser } from '../controllers/authController';
+import { login, register, getCurrentUser, changePassword } from '../controllers/authController';
 
 const router = Router();
 
@@ -26,6 +26,11 @@ router.post(
 // 获取当前登录用户信息
 router.get('/me', authenticateToken, async (req: Request, res: Response) => {
   await getCurrentUser(req, res);
+});
+
+// 修改密码
+router.put('/password', authenticateToken, validate(authSchemas.changePassword), async (req: Request, res: Response) => {
+  await changePassword(req, res);
 });
 
 // 用户登出（客户端删除Token即可）

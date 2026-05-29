@@ -2,8 +2,9 @@ import React, { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Form, Input, InputNumber, DatePicker, Select, Button, Card, Space, message } from 'antd';
 import { SaveOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
 import useContractStore from '../../stores/contractStore';
-import { Contract, ContractStatus } from '../../types/api';
+import { ContractStatus } from '../../types/api';
 
 const { TextArea } = Input;
 
@@ -13,7 +14,7 @@ const ContractFormPage: React.FC = () => {
   const isEdit = !!id;
 
   const [form] = Form.useForm();
-  
+
   const {
     currentContract,
     loading,
@@ -36,9 +37,9 @@ const ContractFormPage: React.FC = () => {
     if (isEdit && currentContract) {
       form.setFieldsValue({
         ...currentContract,
-        signDate: currentContract.signDate ? require('dayjs')(currentContract.signDate) : null,
-        effectiveDate: currentContract.effectiveDate ? require('dayjs')(currentContract.effectiveDate) : null,
-        expiryDate: currentContract.expiryDate ? require('dayjs')(currentContract.expiryDate) : null,
+        signDate: currentContract.signDate ? dayjs(currentContract.signDate) : null,
+        effectiveDate: currentContract.effectiveDate ? dayjs(currentContract.effectiveDate) : null,
+        expiryDate: currentContract.expiryDate ? dayjs(currentContract.expiryDate) : null,
       });
     }
   }, [currentContract, form]);
@@ -47,9 +48,10 @@ const ContractFormPage: React.FC = () => {
     try {
       const data = {
         ...values,
-        signDate: values.signDate?.format('YYYY-MM-DD'),
-        effectiveDate: values.effectiveDate?.format('YYYY-MM-DD'),
-        expiryDate: values.expiryDate?.format('YYYY-MM-DD'),
+        amount: values.amount || null,
+        signDate: values.signDate?.format('YYYY-MM-DD') || null,
+        effectiveDate: values.effectiveDate?.format('YYYY-MM-DD') || null,
+        expiryDate: values.expiryDate?.format('YYYY-MM-DD') || null,
       };
 
       if (isEdit && id) {
@@ -87,9 +89,9 @@ const ContractFormPage: React.FC = () => {
         <Form.Item
           name="contractNo"
           label="合同编号"
-          rules={[{ required: true, message: '请输入合同编号' }]}
+          extra="留空将自动生成"
         >
-          <Input placeholder="请输入合同编号" />
+          <Input placeholder="留空自动生成，或手动输入" />
         </Form.Item>
 
         <Form.Item
@@ -127,6 +129,7 @@ const ContractFormPage: React.FC = () => {
             <Select.Option value="服务合同">服务合同</Select.Option>
             <Select.Option value="劳动合同">劳动合同</Select.Option>
             <Select.Option value="租赁合同">租赁合同</Select.Option>
+            <Select.Option value="保密协议">保密协议</Select.Option>
             <Select.Option value="其他">其他</Select.Option>
           </Select>
         </Form.Item>
@@ -134,7 +137,6 @@ const ContractFormPage: React.FC = () => {
         <Form.Item
           name="amount"
           label="合同金额"
-          rules={[{ required: true, message: '请输入合同金额' }]}
         >
           <InputNumber
             placeholder="请输入合同金额"
@@ -148,7 +150,6 @@ const ContractFormPage: React.FC = () => {
         <Form.Item
           name="signDate"
           label="签署日期"
-          rules={[{ required: true, message: '请选择签署日期' }]}
         >
           <DatePicker style={{ width: '100%' }} />
         </Form.Item>
@@ -156,7 +157,6 @@ const ContractFormPage: React.FC = () => {
         <Form.Item
           name="effectiveDate"
           label="生效日期"
-          rules={[{ required: true, message: '请选择生效日期' }]}
         >
           <DatePicker style={{ width: '100%' }} />
         </Form.Item>
@@ -164,7 +164,6 @@ const ContractFormPage: React.FC = () => {
         <Form.Item
           name="expiryDate"
           label="到期日期"
-          rules={[{ required: true, message: '请选择到期日期' }]}
         >
           <DatePicker style={{ width: '100%' }} />
         </Form.Item>
@@ -172,7 +171,6 @@ const ContractFormPage: React.FC = () => {
         <Form.Item
           name="content"
           label="合同内容"
-          rules={[{ required: true, message: '请输入合同内容' }]}
         >
           <TextArea rows={6} placeholder="请输入合同内容" />
         </Form.Item>

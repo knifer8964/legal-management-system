@@ -8,18 +8,18 @@ interface ContractState {
   total: number;
   loading: boolean;
   error: string | null;
-  
+
   fetchContracts: (params: ContractListParams) => Promise<void>;
   fetchContractById: (id: string) => Promise<void>;
   createContract: (data: Partial<Contract>) => Promise<Contract>;
   updateContract: (id: string, data: Partial<Contract>) => Promise<Contract>;
-  submitContract: (id: string) => Promise<void>;
-  approveContract: (id: string, status: 'APPROVED' | 'REJECTED', comment: string) => Promise<void>;
+  submitContract: (id: string, approverIds: number[]) => Promise<void>;
+  approveContract: (id: string, status: 'APPROVED' | 'REJECTED', comment?: string) => Promise<void>;
   clearCurrentContract: () => void;
   clearError: () => void;
 }
 
-const useContractStore = create<ContractState>((set, get) => ({
+const useContractStore = create<ContractState>((set) => ({
   contracts: [],
   currentContract: null,
   total: 0,
@@ -74,10 +74,10 @@ const useContractStore = create<ContractState>((set, get) => ({
     }
   },
 
-  submitContract: async (id: string) => {
+  submitContract: async (id: string, approverIds: number[]) => {
     set({ loading: true, error: null });
     try {
-      await contractService.submitContract(id);
+      await contractService.submitContract(id, approverIds);
       set({ loading: false });
     } catch (error: any) {
       set({ error: error.message, loading: false });
@@ -85,7 +85,7 @@ const useContractStore = create<ContractState>((set, get) => ({
     }
   },
 
-  approveContract: async (id: string, status: 'APPROVED' | 'REJECTED', comment: string) => {
+  approveContract: async (id: string, status: 'APPROVED' | 'REJECTED', comment?: string) => {
     set({ loading: true, error: null });
     try {
       await contractService.approveContract(id, { status, comment });

@@ -7,7 +7,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
-import redis from 'redis';
+import { createClient } from 'redis';
 import winston from 'winston';
 import rateLimit from 'express-rate-limit';
 import { errorHandler, notFoundHandler, requestTracker, requestLogger } from './middleware';
@@ -19,12 +19,20 @@ dotenv.config();
 // 初始化 Prisma 客户端
 export const prisma = new PrismaClient();
 
-// 初始化 Redis 客户端
-export const redisClient = redis.createClient({
+// 初始化 Redis 客户端（可选，失败时降级）
+export const redisClient = createClient({
   url: process.env.REDIS_URL || 'redis://localhost:6379'
 });
 
-redisClient.on('error', (err) => console.error('Redis Client Error', err));
+let redisConnected = false;
+let redisErrorLogged = false;
+
+redisClient.on('error', (err) => {
+  if (!redisErrorLogged) {
+    console.warn('⚠️ Redis 连接失败，将使用内存缓存:', err.message || '连接被拒绝');
+    redisErrorLogged = true;
+  }
+});
 
 // 初始化 Winston 日志
 export const logger = winston.createLogger({
@@ -87,9 +95,20 @@ app.use(errorHandler);
 // 启动服务器
 async function startServer() {
   try {
-    // 连接 Redis
-    await redisClient.connect();
-    logger.info('✅ Redis 连接成功');
+    // 尝试连接 Redis（可选）
+    try {
+      await Promise.race([
+        redisClient.connect(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Redis connection timeout')), 3000))
+      ]);
+      redisConnected = true;
+      logger.info('✅ Redis 连接成功');
+    } catch (redisErr) {
+      console.warn('⚠️ Redis 连接失败，继续启动服务器（不使用 Redis 缓存）');
+      logger.warn('Redis 连接失败，将使用降级模式', { error: (redisErr as Error).message });
+      // 移除错误监听器，避免持续打印
+      redisClient.removeAllListeners('error');
+    }
     
     // 测试数据库连接
     await prisma.$connect();
@@ -118,14 +137,26 @@ async function startServer() {
 process.on('SIGTERM', async () => {
   logger.info('SIGTERM 信号接收，准备关闭服务器...');
   await prisma.$disconnect();
-  await redisClient.quit();
+  if (redisConnected) {
+    try {
+      await redisClient.quit();
+    } catch (e) {
+      // ignore
+    }
+  }
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
   logger.info('SIGINT 信号接收，准备关闭服务器...');
   await prisma.$disconnect();
-  await redisClient.quit();
+  if (redisConnected) {
+    try {
+      await redisClient.quit();
+    } catch (e) {
+      // ignore
+    }
+  }
   process.exit(0);
 });
 

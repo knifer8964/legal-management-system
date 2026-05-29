@@ -136,7 +136,7 @@ export const authSchemas = {
 export const contractSchemas = {
   create: {
     body: Joi.object({
-      contractNo: Joi.string().max(50).required(),
+      contractNo: Joi.string().max(50).allow(null, ''), // 可选，不传则自动生成
       title: Joi.string().max(255).required(),
       partyA: Joi.string().max(255).required(),
       partyB: Joi.string().max(255).required(),
