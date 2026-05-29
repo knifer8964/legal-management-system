@@ -6,6 +6,8 @@ import authRoutes from './authRoutes';
 import contractRoutes from './contractRoutes';
 import agentRoutes from './agentRoutes';
 import knowledgeBaseRoutes from './knowledgeBaseRoutes';
+import userRoutes from './userRoutes';
+import dashboardRoutes from './dashboardRoutes';
 
 const router = Router();
 
@@ -14,11 +16,12 @@ router.use('/auth', authRoutes);
 router.use('/contracts', contractRoutes);
 router.use('/agents', agentRoutes);
 router.use('/knowledge-bases', knowledgeBaseRoutes);
+router.use('/users', userRoutes);
+router.use('/dashboard', dashboardRoutes);
 
 // TODO: 后续添加其他路由模块
 // router.use('/cases', caseRoutes);
 // router.use('/tasks', taskRoutes);
 // router.use('/orders', orderRoutes);
-// router.use('/users', userRoutes);
 
 export default router;

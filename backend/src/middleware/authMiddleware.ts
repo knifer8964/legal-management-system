@@ -1,4 +1,4 @@
-﻿// 公司法务智慧管理系统 - 认证中间件
+// 公司法务智慧管理系统 - 认证中间件
 // 功能: JWT Token 验证、权限检查
 
 import { Request, Response, NextFunction } from 'express';
@@ -97,16 +97,53 @@ export function checkPermission(requiredPermission: string) {
         });
       }
       
-      const permissions = dbUser.role.permissions as any;
+      const permissions = dbUser.role.permissions as Record<string, any>;
       
       // 管理员拥有所有权限
       if (permissions && permissions.all === true) {
         return next();
       }
       
-      // 检查具体权限（支持模块级权限）
-      if (permissions && permissions[requiredPermission]) {
-        return next();
+      // 解析权限字符串，支持 "module:action" 格式
+      // 例如: "user:view" -> module="users", action="read"
+      // 例如: "dashboard:view" -> module="dashboard", action="view"
+      const parts = requiredPermission.split(':');
+      if (parts.length === 2) {
+        const [module, action] = parts;
+        
+        // 映射 action 到标准权限值
+        const actionMap: Record<string, string> = {
+          'view': 'read',
+          'read': 'read',
+          'create': 'write',
+          'write': 'write',
+          'edit': 'write',
+          'update': 'write',
+          'delete': 'delete',
+          'approve': 'approve',
+          'manage': 'admin',
+        };
+        
+        const normalizedAction = actionMap[action] || action;
+        
+        // 检查模块权限
+        if (permissions && permissions[module]) {
+          const modulePerms = permissions[module];
+          if (Array.isArray(modulePerms)) {
+            if (modulePerms.includes(normalizedAction) || modulePerms.includes('admin')) {
+              return next();
+            }
+          } else if (modulePerms === true || modulePerms === 'admin') {
+            return next();
+          }
+        }
+        
+        // 检查 system.admin 是否有全局管理权限
+        if (permissions && permissions.system && Array.isArray(permissions.system)) {
+          if (permissions.system.includes('admin')) {
+            return next();
+          }
+        }
       }
       
       // 权限不足

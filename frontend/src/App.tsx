@@ -9,6 +9,7 @@ import DashboardPage from './pages/DashboardPage';
 import ContractListPage from './pages/ContractListPage';
 import ContractFormPage from './pages/ContractFormPage';
 import ContractDetailPage from './pages/ContractDetailPage';
+import UserListPage from './pages/UserListPage';
 
 // 路由守卫组件
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -42,6 +43,7 @@ const App: React.FC = () => {
             <Route path="contracts/create" element={<ContractFormPage />} />
             <Route path="contracts/:id" element={<ContractDetailPage />} />
             <Route path="contracts/:id/edit" element={<ContractFormPage />} />
+            <Route path="users" element={<UserListPage />} />
           </Route>
           
           <Route path="*" element={<Navigate to="/" replace />} />

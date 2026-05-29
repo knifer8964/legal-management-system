@@ -11,6 +11,9 @@
     "lint": "eslint src/**/*.ts",
     "prisma:seed": "ts-node prisma/seed.ts"
   },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },
   "keywords": [
     "legal",
     "management",
