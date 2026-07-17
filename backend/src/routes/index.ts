@@ -4,6 +4,8 @@ import clientRoutes from './clientRoutes';
 import authRoutes from './authRoutes';
 import matterRoutes from './matterRoutes';
 import taskRoutes from './taskRoutes';
+import communicationRoutes from './communicationRoutes';
+import timeEntryRoutes from './timeEntryRoutes';
 
 const router = Router();
 
@@ -12,5 +14,7 @@ router.use('/auth', authRoutes);
 router.use('/clients', clientRoutes);
 router.use('/matters', matterRoutes);
 router.use('/tasks', taskRoutes);
+router.use('/communications', communicationRoutes);
+router.use('/time-entries', timeEntryRoutes);
 
 export default router;

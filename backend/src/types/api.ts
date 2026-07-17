@@ -418,6 +418,77 @@ export interface Communication {
   sentAt: string;
   readAt: string | null;
   createdAt: string;
+
+  client?: Client;
+  matter?: Matter;
+  user?: User;
+}
+
+export interface CreateCommunicationDto {
+  clientId: number;
+  matterId?: number;
+  channel: CommChannel;
+  direction: Direction;
+  subject?: string;
+  content: string;
+  contactName?: string;
+  contactInfo?: string;
+  contactWechat?: string;
+  fromAddr?: string;
+  toAddrs?: string[];
+  ccAddrs?: string[];
+  attachments?: any;
+  externalId?: string;
+  threadId?: string;
+  sentAt?: string;
+}
+
+export interface UpdateCommunicationDto {
+  subject?: string;
+  content?: string;
+  summary?: string;
+  contactName?: string;
+  contactInfo?: string;
+  contactWechat?: string;
+  matterId?: number;
+}
+
+export interface CommunicationQueryParams extends PaginationParams {
+  clientId?: number;
+  matterId?: number;
+  channel?: CommChannel;
+  direction?: Direction;
+  search?: string;
+}
+
+// =====================================================
+// 计时记录类型补充
+// =====================================================
+
+export interface CreateTimeEntryDto {
+  matterId: number;
+  clientId: number;
+  description: string;
+  hourlyRate?: number;
+  isBillable?: boolean;
+}
+
+export interface UpdateTimeEntryDto {
+  description?: string;
+  hourlyRate?: number;
+  isBillable?: boolean;
+  startTime?: string;
+  endTime?: string;
+}
+
+export interface TimeEntryQueryParams extends PaginationParams {
+  matterId?: number;
+  clientId?: number;
+  userId?: number;
+  isBilled?: boolean;
+  isBillable?: boolean;
+  startDate?: string;
+  endDate?: string;
 }
 
 // =====================================================
