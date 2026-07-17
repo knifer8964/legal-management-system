@@ -1,7 +1,8 @@
-// Prisma Schema for Legal Management System
+// Prisma Schema for 个人法务工作室管理系统
 // Database: MySQL 8.0+
 // ORM: Prisma v5.7+
-// FIXED VERSION: Corrected syntax errors in Order model and enums
+// 设计日期: 2026-07-17
+// 定位: 独立法务工作者的一站式业务管理工具
 
 generator client {
   provider = "prisma-client-js"
@@ -12,7 +13,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ===== 用户与权限模块 =====
+// =====================================================
+// 用户与权限模块 (保留兼容)
+// =====================================================
 
 model User {
   id            Int       @id @default(autoincrement())
@@ -27,20 +30,16 @@ model User {
   lastLoginAt   DateTime? @map("last_login_at") @db.DateTime(0)
   createdAt     DateTime  @default(now()) @map("created_at") @db.DateTime(0)
   updatedAt     DateTime  @updatedAt @map("updated_at") @db.DateTime(0)
-  
+
   // Relations
-  role              Role      @relation(fields: [roleId], references: [id])
-  contracts         Contract[] @relation("ContractCreator")
-  cases             Case[]     @relation("CaseCreator")
-  caseAssignments   Case[]     @relation("CaseAssignee")
-  tasksAssigned     Task[]     @relation("TaskAssignee")
-  tasksCreated      Task[]     @relation("TaskCreator")
-  contractApprovals ContractApproval[] @relation("ContractApprover")
-  caseTimelineOps   CaseTimeline[] @relation("CaseTimelineOperator")
-  ownedAgents       Agent[]   @relation("AgentOwner")
-  knowledgeBases    KnowledgeBase[] @relation("KBOwner")
-  uploadedDocuments Document[] @relation("DocUploader")
-  
+  role                  Role              @relation(fields: [roleId], references: [id])
+  matters               Matter[]          @relation("MatterAssignee")
+  createdMatters        Matter[]          @relation("MatterCreator")
+  communications        Communication[]
+  tasks                 Task[]
+  timeEntries           TimeEntry[]
+  createdInvoices       Invoice[]
+
   @@index([username])
   @@index([email])
   @@index([roleId])
@@ -49,15 +48,15 @@ model User {
 
 model Role {
   id          Int       @id @default(autoincrement())
-  roleName    String   @unique @map("role_name") @db.VarChar(50)
-  description String?  @db.Text
+  roleName    String    @unique @map("role_name") @db.VarChar(50)
+  description String?   @db.Text
   permissions Json?
-  createdAt   DateTime @default(now()) @map("created_at") @db.DateTime(0)
-  updatedAt   DateTime @updatedAt @map("updated_at") @db.DateTime(0)
-  
+  createdAt   DateTime  @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.DateTime(0)
+
   // Relations
-  users       User[]
-  
+  users User[]
+
   @@map("roles")
 }
 
@@ -67,202 +66,183 @@ enum UserStatus {
   LOCKED
 }
 
-// ===== 合同管理模块 =====
+// =====================================================
+// 客户管理模块 (核心新增)
+// =====================================================
 
-model Contract {
-  id            Int           @id @default(autoincrement())
-  contractNo    String        @unique @map("contract_no") @db.VarChar(50)
-  title         String        @db.VarChar(255)
-  partyA        String        @map("party_a") @db.VarChar(255)
-  partyB        String        @map("party_b") @db.VarChar(255)
-  contractType  String?      @map("contract_type") @db.VarChar(50)
-  amount        Decimal?      @db.Decimal(15, 2)
-  signDate      DateTime?     @map("sign_date") @db.Date
-  effectiveDate DateTime?     @map("effective_date") @db.Date
-  expiryDate    DateTime?     @map("expiry_date") @db.Date
-  status        ContractStatus @default(DRAFT)
-  content       String?       @db.Text
-  filePath      String?       @map("file_path") @db.VarChar(500)
-  createdBy     Int           @map("created_by")
-  createdAt     DateTime      @default(now()) @map("created_at") @db.DateTime(0)
-  updatedAt     DateTime      @updatedAt @map("updated_at") @db.DateTime(0)
-  
-  // Relations
-  creator       User          @relation("ContractCreator", fields: [createdBy], references: [id])
-  approvals     ContractApproval[]
-  
-  @@index([contractNo])
-  @@index([status])
-  @@index([createdBy])
-  @@index([signDate, expiryDate])
-  @@map("contracts")
-}
-
-model ContractApproval {
+model Client {
   id          Int         @id @default(autoincrement())
-  contractId  Int         @map("contract_id")
-  approverId  Int         @map("approver_id")
-  status      ApprovalStatus @default(PENDING)
-  comment     String?     @db.Text
-  approvedAt  DateTime?    @map("approved_at") @db.DateTime(0)
+  clientType  ClientType  @map("client_type")
+  name        String      @db.VarChar(100) // 个人姓名或企业名称
+  shortName   String?     @map("short_name") @db.VarChar(50) // 企业简称
+
+  // 联系信息
+  phone       String?     @db.VarChar(20)
+  email       String?     @db.VarChar(100)
+  wechatId    String?     @map("wechat_id") @db.VarChar(50)
+  qq          String?     @db.VarChar(20)
+  address     String?     @db.VarChar(255)
+
+  // 个人客户特有
+  gender      String?     @db.VarChar(10) // MALE / FEMALE / OTHER
+  idNumber    String?     @map("id_number") @db.VarChar(50) // 身份证号
+  birthDate   DateTime?   @map("birth_date") @db.Date
+
+  // 企业客户特有
+  creditCode  String?     @map("credit_code") @db.VarChar(50) // 统一社会信用代码
+  legalRep    String?     @map("legal_rep") @db.VarChar(50) // 法人代表
+  industry    String?     @db.VarChar(50)
+  scale       String?     @db.VarChar(20) // 企业规模: 微/小/中/大
+  website     String?     @db.VarChar(255)
+
+  // 企业对接人信息
+  contactName   String?   @map("contact_name") @db.VarChar(50)
+  contactTitle  String?   @map("contact_title") @db.VarChar(50)
+  contactPhone  String?   @map("contact_phone") @db.VarChar(20)
+  contactEmail  String?   @map("contact_email") @db.VarChar(100)
+  contactWechat String?   @map("contact_wechat") @db.VarChar(50)
+
+  // 服务配置
+  servicePlan  String?   @map("service_plan") @db.VarChar(50) // BASIC / STANDARD / PREMIUM / VIRTUAL_DEPT
+  monthlyFee   Decimal?  @map("monthly_fee") @db.Decimal(10, 2)
+  serviceStart DateTime? @map("service_start") @db.Date
+  serviceEnd   DateTime? @map("service_end") @db.Date
+
+  // 标签与备注
+  tags         Json?     // 标签数组 ["VIP", "老客户"]
+  notes        String?   @db.Text
+  source       String?   @db.VarChar(50) // 客户来源
+
+  // 统计信息（冗余字段，提高查询性能）
+  totalMatters Int       @default(0) @map("total_matters")
+  totalAmount  Decimal   @default(0) @map("total_amount") @db.Decimal(12, 2)
+  lastContactAt DateTime? @map("last_contact_at") @db.DateTime(0)
+
+  status       ClientStatus @default(ACTIVE)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.DateTime(0)
+
+  // Relations
+  matters          Matter[]
+  communications   Communication[]
+  documents        Document[]
+  invoices         Invoice[]
+  enterpriseConfig EnterpriseConfig?
+  timeEntries      TimeEntry[]
+
+  @@index([clientType])
+  @@index([name])
+  @@index([phone])
+  @@index([status])
+  @@index([lastContactAt])
+  @@map("clients")
+}
+
+enum ClientType {
+  PERSONAL    // 个人客户
+  ENTERPRISE  // 企业客户
+}
+
+enum ClientStatus {
+  ACTIVE      // 合作中
+  INACTIVE    // 暂停
+  POTENTIAL   // 潜在客户
+  CLOSED      // 已结束
+}
+
+// =====================================================
+// 业务事项模块 (核心新增，统合原合同/案件/咨询)
+// =====================================================
+
+model Matter {
+  id          Int         @id @default(autoincrement())
+  matterNo    String      @unique @map("matter_no") @db.VarChar(50) // 业务编号
+  matterType  MatterType  @map("matter_type")
+  title       String      @db.VarChar(255)
+  description String?     @db.Text
+
+  // 关联客户
+  clientId    Int         @map("client_id")
+
+  // 业务详情
+  status      MatterStatus @default(PENDING)
+  priority    Priority    @default(MEDIUM)
+
+  // 费用信息
+  feeType     FeeType     @map("fee_type")
+  feeAmount   Decimal?    @map("fee_amount") @db.Decimal(10, 2)
+  hourlyRate  Decimal?    @map("hourly_rate") @db.Decimal(10, 2)
+  totalAmount Decimal     @default(0) @map("total_amount") @db.Decimal(10, 2)
+  paidAmount  Decimal     @default(0) @map("paid_amount") @db.Decimal(10, 2)
+
+  // 时间安排
+  startDate   DateTime?   @map("start_date") @db.Date
+  deadline    DateTime?   @db.DateTime(0)
+  completedAt DateTime?   @map("completed_at") @db.DateTime(0)
+
+  // 进展
+  progress    Int         @default(0) // 0-100
+  nextAction  String?     @map("next_action") @db.VarChar(500)
+
+  // 业务特定字段（JSON 存储）
+  metadata    Json?       // 不同类型业务的扩展字段
+
+  // 负责人
+  assigneeId  Int?        @map("assignee_id")
+  createdById Int         @map("created_by_id")
+
   createdAt   DateTime    @default(now()) @map("created_at") @db.DateTime(0)
-  
+  updatedAt   DateTime    @updatedAt @map("updated_at") @db.DateTime(0)
+
   // Relations
-  contract    Contract    @relation(fields: [contractId], references: [id], onDelete: Cascade)
-  approver    User        @relation("ContractApprover", fields: [approverId], references: [id])
-  
-  @@index([contractId])
-  @@index([approverId])
-  @@index([status])
-  @@map("contract_approvals")
-}
+  client        Client        @relation(fields: [clientId], references: [id])
+  assignee      User?         @relation("MatterAssignee", fields: [assigneeId], references: [id])
+  createdBy     User          @relation("MatterCreator", fields: [createdById], references: [id])
+  tasks         Task[]
+  timeline      TimelineEvent[]
+  documents     Document[]
+  timeEntries   TimeEntry[]
+  invoices      Invoice[]
+  communications Communication[]
 
-enum ContractStatus {
-  DRAFT
-  REVIEWING
-  SIGNED
-  EXECUTING
-  COMPLETED
-  TERMINATED
-}
-
-enum ApprovalStatus {
-  PENDING
-  APPROVED
-  REJECTED
-}
-
-// ===== 案件管理模块 =====
-
-model Case {
-  id            Int       @id @default(autoincrement())
-  caseNo        String    @unique @map("case_no") @db.VarChar(50)
-  title         String    @db.VarChar(255)
-  caseType      CaseType
-  plaintiff     String?   @db.Text
-  defendant     String?   @db.Text
-  court         String?   @db.VarChar(255)
-  filingDate    DateTime?  @map("filing_date") @db.Date
-  status        CaseStatus @default(PENDING)
-  description   String?   @db.Text
-  createdBy     Int
-  assignedTo    Int?      @map("assigned_to")
-  createdAt     DateTime  @default(now()) @map("created_at") @db.DateTime(0)
-  updatedAt     DateTime  @updatedAt @map("updated_at") @db.DateTime(0)
-  
-  // Relations
-  creator       User       @relation("CaseCreator", fields: [createdBy], references: [id])
-  assignee      User?      @relation("CaseAssignee", fields: [assignedTo], references: [id])
-  timeline      CaseTimeline[]
-  
-  @@index([caseNo])
-  @@index([status])
-  @@index([createdBy])
-  @@index([assignedTo])
-  @@map("cases")
-}
-
-model CaseTimeline {
-  id          Int       @id @default(autoincrement())
-  caseId      Int       @map("case_id")
-  eventType   String    @map("event_type") @db.VarChar(50)
-  eventDate   DateTime  @map("event_date") @db.DateTime(0)
-  description String?   @db.Text
-  operatorId  Int       @map("operator_id")
-  createdAt   DateTime  @default(now()) @map("created_at") @db.DateTime(0)
-  
-  // Relations
-  caseObj     Case       @relation(fields: [caseId], references: [id], onDelete: Cascade)
-  operator    User       @relation("CaseTimelineOperator", fields: [operatorId], references: [id])
-  
-  @@index([caseId])
-  @@index([eventDate])
-  @@map("case_timeline")
-}
-
-enum CaseType {
-  CIVIL
-  ADMINISTRATIVE
-  CRIMINAL
-  ARBITRATION
-}
-
-enum CaseStatus {
-  PENDING
-  TRIAL
-  APPEAL
-  ENFORCEMENT
-  CLOSED
-}
-
-// ===== AI Agent 管理模块 =====
-
-model Agent {
-  id                Int       @id @default(autoincrement())
-  agentName         String    @unique @map("agent_name") @db.VarChar(100)
-  agentType         AgentType @map("agent_type")
-  apiEndpoint       String?   @map("api_endpoint") @db.VarChar(500)
-  apiKeyEncrypted   String?   @map("api_key_encrypted") @db.VarChar(500)
-  capabilities      Json?
-  status            AgentStatus @default(ACTIVE)
-  ownerId           Int       @map("owner_id")
-  createdAt         DateTime  @default(now()) @map("created_at") @db.DateTime(0)
-  updatedAt         DateTime  @updatedAt @map("updated_at") @db.DateTime(0)
-  
-  // Relations
-  owner             User      @relation("AgentOwner", fields: [ownerId], references: [id])
-  agentTasks        Task[]    @relation("TaskAgent")
-  assignedOrders    Order[]   @relation("OrderAgent")
-  
-  @@map("agents")
-}
-
-enum AgentType {
-  HUMAN
-  AI
-  EXPERT
-}
-
-enum AgentStatus {
-  ACTIVE
-  INACTIVE
-  BUSY
-}
-
-// ===== 任务管理模块 =====
-
-model Task {
-  id             Int       @id @default(autoincrement())
-  taskType       String    @map("task_type") @db.VarChar(50)
-  title          String    @db.VarChar(255)
-  description    String?   @db.Text
-  assignerId     Int       @map("assigner_id")
-  assigneeId     Int       @map("assignee_id")
-  agentId        Int?      @map("agent_id")
-  assigneeType   AssigneeType
-  priority       Priority   @default(MEDIUM)
-  status         TaskStatus @default(PENDING)
-  taskData       Json?     @map("task_data")
-  result         Json?
-  dueDate        DateTime?  @map("due_date") @db.DateTime(0)
-  completedAt    DateTime?  @map("completed_at") @db.DateTime(0)
-  createdAt      DateTime  @default(now()) @map("created_at") @db.DateTime(0)
-  updatedAt      DateTime  @updatedAt @map("updated_at") @db.DateTime(0)
-  
-  // Relations
-  assigner       User      @relation("TaskCreator", fields: [assignerId], references: [id])
-  assignee       User      @relation("TaskAssignee", fields: [assigneeId], references: [id])
-  agent          Agent?    @relation("TaskAgent", fields: [agentId], references: [id])
-  
+  @@index([clientId])
+  @@index([matterType])
   @@index([status])
   @@index([assigneeId])
-  @@index([dueDate])
-  @@map("task_assignments")
+  @@index([deadline])
+  @@index([createdAt])
+  @@map("matters")
 }
 
-enum AssigneeType {
-  HUMAN
-  AI
+enum MatterType {
+  CONSULTATION     // 法律咨询
+  CONTRACT_REVIEW  // 合同审查
+  CONTRACT_DRAFT   // 合同起草
+  CASE_LITIGATION  // 诉讼案件
+  CASE_ARBITRATION // 仲裁案件
+  CASE_MEDIATION   // 调解案件
+  COMPLIANCE       // 合规顾问
+  TRAINING         // 法律培训
+  DOCUMENT_DRAFT   // 文书代写
+  OTHER            // 其他
+}
+
+enum MatterStatus {
+  PENDING         // 待处理
+  IN_PROGRESS     // 进行中
+  WAITING_CLIENT  // 等待客户
+  REVIEWING       // 内部复核
+  COMPLETED       // 已完成
+  ARCHIVED        // 已归档
+  CANCELLED       // 已取消
+}
+
+enum FeeType {
+  FIXED         // 固定费用
+  HOURLY        // 按小时
+  CONTINGENCY   // 风险代理
+  MONTHLY       // 包月
+  FREE          // 免费
 }
 
 enum Priority {
@@ -272,149 +252,345 @@ enum Priority {
   URGENT
 }
 
-enum TaskStatus {
-  PENDING
-  IN_PROGRESS
-  COMPLETED
-  FAILED
-  CANCELLED
+// =====================================================
+// 沟通记录模块 (核心新增)
+// =====================================================
+
+model Communication {
+  id          Int         @id @default(autoincrement())
+  clientId    Int         @map("client_id")
+  matterId    Int?        @map("matter_id")
+  userId      Int?        @map("user_id") // 处理人
+
+  channel     CommChannel
+  direction   Direction
+
+  // 内容
+  subject     String?     @db.VarChar(255) // 主题(邮件)
+  content     String      @db.Text
+  summary     String?     @db.VarChar(500) // AI 摘要
+
+  // 附件
+  attachments Json?       // [{name, url, size}]
+
+  // 元数据
+  contactName String?     @map("contact_name") @db.VarChar(50) // 对接人
+  contactInfo String?     @map("contact_info") @db.VarChar(100) // 联系方式
+  contactWechat String?   @map("contact_wechat") @db.VarChar(50) // 对接人微信
+
+  // 外部ID（用于同步追踪）
+  externalId  String?     @map("external_id") @db.VarChar(100)
+  threadId    String?     @map("thread_id") @db.VarChar(100)
+
+  // 邮件特有字段
+  fromAddr    String?     @map("from_addr") @db.VarChar(255)
+  toAddrs     Json?       @map("to_addrs") // 收件人数组
+  ccAddrs     Json?       @map("cc_addrs")
+
+  // 时间
+  sentAt      DateTime    @map("sent_at") @db.DateTime(0)
+  readAt      DateTime?   @map("read_at") @db.DateTime(0)
+  createdAt   DateTime    @default(now()) @map("created_at") @db.DateTime(0)
+
+  // Relations
+  client      Client      @relation(fields: [clientId], references: [id])
+  matter      Matter?     @relation(fields: [matterId], references: [id])
+  user        User?       @relation(fields: [userId], references: [id])
+
+  @@index([clientId])
+  @@index([matterId])
+  @@index([channel])
+  @@index([sentAt])
+  @@index([externalId])
+  @@map("communications")
 }
 
-// ===== 服务产品与订单模块 =====
-
-model ServiceProduct {
-  id           Int       @id @default(autoincrement())
-  name         String    @db.VarChar(200)
-  description  String?   @db.Text
-  price        Decimal   @db.Decimal(10, 2)
-  pricingUnit  PricingUnit @map("pricing_unit")
-  category     String?   @db.VarChar(50)
-  isPublished  Boolean   @default(false) @map("is_published")
-  createdAt    DateTime  @default(now()) @map("created_at") @db.DateTime(0)
-  updatedAt    DateTime  @updatedAt @map("updated_at") @db.DateTime(0)
-  
-  // Relations
-  orders       Order[]
-  
-  @@map("service_products")
+enum CommChannel {
+  WECHAT    // 微信
+  EMAIL     // 邮件
+  SMS       // 短信
+  PHONE     // 电话
+  MEETING   // 面谈
+  VIDEO     // 视频会议
+  SYSTEM    // 系统消息
+  OTHER     // 其他
 }
 
-model Order {
-  id              Int       @id @default(autoincrement())
-  orderNo         String    @unique @map("order_no") @db.VarChar(50)
-  customerName    String    @map("customer_name") @db.VarChar(100)
-  customerPhone   String?   @map("customer_phone") @db.VarChar(20)
-  customerEmail   String?   @map("customer_email") @db.VarChar(100)
-  productId       Int       @map("product_id")
-  amount          Decimal   @db.Decimal(10, 2)
-  status          OrderStatus @default(PENDING)
-  paymentMethod   String?   @map("payment_method") @db.VarChar(50)
-  paidAt          DateTime?  @map("paid_at") @db.DateTime(0)
-  assignedAgentId Int?      @map("assigned_agent_id")
-  createdAt       DateTime  @default(now()) @map("created_at") @db.DateTime(0)
-  
+enum Direction {
+  INBOUND   // 收
+  OUTBOUND  // 发
+}
+
+// =====================================================
+// 时间线事件 (业务事项进展记录)
+// =====================================================
+
+model TimelineEvent {
+  id          Int       @id @default(autoincrement())
+  matterId    Int       @map("matter_id")
+
+  eventType   String    @db.VarChar(50) // STATUS_CHANGE / NOTE / FILE_UPLOAD / COMMUNICATION / SYSTEM
+  title       String    @db.VarChar(255)
+  description String?   @db.Text
+
+  // 状态变化
+  fromStatus  String?   @map("from_status") @db.VarChar(50)
+  toStatus    String?   @map("to_status") @db.VarChar(50)
+
+  metadata    Json?
+
+  operatorId  Int?      @map("operator_id")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.DateTime(0)
+
   // Relations
-  product         ServiceProduct @relation(fields: [productId], references: [id])
-  assignedAgent   Agent?         @relation("OrderAgent", fields: [assignedAgentId], references: [id])
-  
-  @@index([orderNo])
-  @@index([status])
+  matter      Matter    @relation(fields: [matterId], references: [id])
+
+  @@index([matterId])
   @@index([createdAt])
-  @@map("orders")
+  @@map("timeline_events")
 }
 
-enum PricingUnit {
-  PER_HOUR
-  PER_CASE
-  PER_MONTH
+// =====================================================
+// 任务清单
+// =====================================================
+
+model Task {
+  id          Int         @id @default(autoincrement())
+  matterId    Int?        @map("matter_id")
+  userId      Int         @map("user_id") // 负责人
+
+  title       String      @db.VarChar(255)
+  description String?     @db.Text
+
+  status      TaskStatus  @default(TODO)
+  priority    Priority    @default(MEDIUM)
+
+  dueDate     DateTime?   @map("due_date") @db.DateTime(0)
+  completedAt DateTime?   @map("completed_at") @db.DateTime(0)
+
+  // 提醒
+  reminderAt  DateTime?   @map("reminder_at") @db.DateTime(0)
+  isReminded  Boolean     @default(false) @map("is_reminded")
+
+  createdAt   DateTime    @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt   DateTime    @updatedAt @map("updated_at") @db.DateTime(0)
+
+  // Relations
+  matter      Matter?     @relation(fields: [matterId], references: [id])
+  user        User        @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([dueDate])
+  @@map("tasks")
 }
 
-enum OrderStatus {
-  PENDING
-  PAID
-  PROCESSING
-  COMPLETED
-  REFUNDED
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
   CANCELLED
 }
 
-// ===== 知识库模块 =====
+// =====================================================
+// 时间记录 (用于计时收费)
+// =====================================================
 
-model KnowledgeBase {
-  id           Int       @id @default(autoincrement())
-  name         String    @db.VarChar(200)
-  description  String?   @db.Text
-  kbType       KbType    @default(PRIVATE)
-  ownerId      Int       @map("owner_id")
-  isPublished  Boolean   @default(false) @map("is_published")
-  config       Json?
-  createdAt    DateTime  @default(now()) @map("created_at") @db.DateTime(0)
-  updatedAt    DateTime  @updatedAt @map("updated_at") @db.DateTime(0)
-  
+model TimeEntry {
+  id          Int       @id @default(autoincrement())
+  matterId    Int       @map("matter_id")
+  userId      Int       @map("user_id")
+  clientId    Int       @map("client_id") // 冗余便于查询
+
+  description String    @db.VarChar(500)
+
+  startTime   DateTime  @map("start_time") @db.DateTime(0)
+  endTime     DateTime? @map("end_time") @db.DateTime(0)
+  duration    Int?      // 实际分钟数
+
+  hourlyRate  Decimal   @map("hourly_rate") @db.Decimal(10, 2)
+  amount      Decimal?  @db.Decimal(10, 2)
+
+  isBillable  Boolean   @default(true) @map("is_billable")
+  isBilled    Boolean   @default(false) @map("is_billed")
+  invoiceId   Int?      @map("invoice_id")
+
+  createdAt   DateTime  @default(now()) @map("created_at") @db.DateTime(0)
+
   // Relations
-  owner        User       @relation("KBOwner", fields: [ownerId], references: [id])
-  documents    Document[]
-  chunks       DocumentChunk[] @relation("ChunkKB")
-  
-  @@index([ownerId])
-  @@index([kbType])
-  @@map("knowledge_bases")
+  matter      Matter    @relation(fields: [matterId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
+  client      Client    @relation(fields: [clientId], references: [id])
+  invoice     Invoice?  @relation(fields: [invoiceId], references: [id])
+
+  @@index([matterId])
+  @@index([userId])
+  @@index([isBilled])
+  @@index([startTime])
+  @@map("time_entries")
 }
 
-enum KbType {
-  PRIVATE
-  TEAM
-  PUBLIC
+// =====================================================
+// 发票与收费
+// =====================================================
+
+model Invoice {
+  id          Int           @id @default(autoincrement())
+  invoiceNo   String        @unique @map("invoice_no") @db.VarChar(50)
+
+  clientId    Int           @map("client_id")
+  matterId    Int?          @map("matter_id")
+  createdById Int           @map("created_by_id")
+
+  // 金额
+  subtotal    Decimal       @db.Decimal(10, 2) // 小计
+  taxRate     Decimal       @default(0) @map("tax_rate") @db.Decimal(5, 2) // 税率 %
+  taxAmount   Decimal       @default(0) @map("tax_amount") @db.Decimal(10, 2)
+  discount    Decimal       @default(0) @db.Decimal(10, 2)
+  totalAmount Decimal       @map("total_amount") @db.Decimal(10, 2)
+  paidAmount  Decimal       @default(0) @map("paid_amount") @db.Decimal(10, 2)
+
+  // 状态
+  status      InvoiceStatus @default(DRAFT)
+
+  // 时间
+  issueDate   DateTime?     @map("issue_date") @db.Date
+  dueDate     DateTime?     @map("due_date") @db.Date
+  paidAt      DateTime?     @map("paid_at") @db.DateTime(0)
+
+  // 明细
+  items       Json?         // [{name, quantity, unitPrice, amount, timeEntryIds}]
+
+  notes       String?       @db.Text
+
+  createdAt   DateTime      @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt   DateTime      @updatedAt @map("updated_at") @db.DateTime(0)
+
+  // Relations
+  client      Client        @relation(fields: [clientId], references: [id])
+  matter      Matter?       @relation(fields: [matterId], references: [id])
+  createdBy   User          @relation(fields: [createdById], references: [id])
+  timeEntries TimeEntry[]
+
+  @@index([clientId])
+  @@index([status])
+  @@index([issueDate])
+  @@map("invoices")
 }
+
+enum InvoiceStatus {
+  DRAFT     // 草稿
+  ISSUED    // 已开具
+  SENT      // 已发送
+  PARTIAL   // 部分支付
+  PAID      // 已支付
+  OVERDUE   // 逾期
+  CANCELLED // 已取消
+}
+
+// =====================================================
+// 文档管理
+// =====================================================
 
 model Document {
-  id            Int        @id @default(autoincrement())
-  kbId          Int        @map("kb_id")
-  title         String     @db.VarChar(500)
-  filePath      String?    @map("file_path") @db.VarChar(500)
-  fileType      String?    @map("file_type") @db.VarChar(50)
-  fileSize      Int?       @map("file_size")
-  content       String?    @db.Text
-  status        DocStatus  @default(UPLOADED)
-  chunkCount    Int        @default(0) @map("chunk_count")
-  uploadedById  Int        @map("uploaded_by_id")
-  createdAt     DateTime   @default(now()) @map("created_at") @db.DateTime(0)
-  updatedAt     DateTime   @updatedAt @map("updated_at") @db.DateTime(0)
-  
+  id          Int       @id @default(autoincrement())
+  fileName    String    @map("file_name") @db.VarChar(255)
+  originalName String   @map("original_name") @db.VarChar(255)
+  filePath    String    @map("file_path") @db.VarChar(500)
+  fileSize    Int       @map("file_size")
+  mimeType    String    @map("mime_type") @db.VarChar(100)
+  fileHash    String?   @map("file_hash") @db.VarChar(64) // SHA256
+
+  // 关联
+  clientId    Int?      @map("client_id")
+  matterId    Int?      @map("matter_id")
+  uploaderId  Int?      @map("uploader_id")
+
+  // 分类
+  category    String?   @db.VarChar(50) // CONTRACT / EVIDENCE / DELIVERABLE / TEMPLATE / OTHER
+  tags        Json?
+
+  description String?   @db.Text
+
+  createdAt   DateTime  @default(now()) @map("created_at") @db.DateTime(0)
+
   // Relations
-  knowledgeBase  KnowledgeBase @relation(fields: [kbId], references: [id], onDelete: Cascade)
-  uploadedBy    User         @relation("DocUploader", fields: [uploadedById], references: [id])
-  chunks        DocumentChunk[]
-  
-  @@index([kbId])
-  @@index([uploadedById])
-  @@index([status])
+  client      Client?   @relation(fields: [clientId], references: [id])
+  matter      Matter?   @relation(fields: [matterId], references: [id])
+
+  @@index([clientId])
+  @@index([matterId])
+  @@index([category])
   @@map("documents")
 }
 
-enum DocStatus {
-  UPLOADED
-  PROCESSING
-  PROCESSED
-  FAILED
+// =====================================================
+// 企业客户专属配置 (虚拟法务部)
+// =====================================================
+
+model EnterpriseConfig {
+  id            Int       @id @default(autoincrement())
+  clientId      Int       @unique @map("client_id")
+
+  // 服务等级
+  serviceLevel  String    @map("service_level") @db.VarChar(20) // BASIC / STANDARD / PREMIUM
+  responseTime  Int       @map("response_time") // 承诺响应时间(小时)
+  monthlyQuota  Int       @map("monthly_quota") // 月度服务次数上限
+  usedQuota     Int       @default(0) @map("used_quota") // 本月已用
+
+  // 对接配置 (预留接口)
+  oaWebhookUrl  String?   @map("oa_webhook_url") @db.VarChar(500)
+  oaApiKey      String?   @map("oa_api_key") @db.VarChar(255)
+  oaApiSecret   String?   @map("oa_api_secret") @db.VarChar(255)
+  dingtalkToken String?   @map("dingtalk_token") @db.VarChar(255)
+  wecomCorpId   String?   @map("wecom_corp_id") @db.VarChar(100)
+  wecomAgentId  String?   @map("wecom_agent_id") @db.VarChar(100)
+  wecomSecret   String?   @map("wecom_secret") @db.VarChar(255)
+
+  // 企业成员列表
+  members       Json?     // [{name, phone, email, role, department}]
+
+  // 品牌定制
+  portalTitle   String?   @map("portal_title") @db.VarChar(100)
+  portalLogo    String?   @map("portal_logo") @db.VarChar(500)
+  portalTheme   String?   @map("portal_theme") @db.VarChar(20)
+
+  // 自定义字段
+  customFields  Json?     @map("custom_fields")
+
+  createdAt     DateTime  @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.DateTime(0)
+
+  // Relations
+  client        Client    @relation(fields: [clientId], references: [id])
+
+  @@map("enterprise_configs")
 }
 
-model DocumentChunk {
-  id           Int      @id @default(autoincrement())
-  documentId   Int      @map("document_id")
-  kbId         Int      @map("kb_id")
-  chunkIndex    Int      @map("chunk_index")
-  content      String   @db.Text
-  embedding    Bytes?
-  metadata     Json?
-  createdAt    DateTime @default(now()) @map("created_at") @db.DateTime(0)
-  
-  // Relations
-  document      Document      @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  knowledgeBase KnowledgeBase @relation("ChunkKB", fields: [kbId], references: [id], onDelete: Cascade)
-  
-  @@index([documentId])
-  @@index([kbId])
-  @@unique([chunkIndex, documentId])
-  @@map("document_chunks")
+// =====================================================
+// 系统日志 (审计用)
+// =====================================================
+
+model SystemLog {
+  id          Int       @id @default(autoincrement())
+  userId      Int?      @map("user_id")
+  action      String    @db.VarChar(50) // LOGIN / CREATE / UPDATE / DELETE / EXPORT
+  resource    String    @db.VarChar(50) // Client / Matter / Invoice
+  resourceId  Int?      @map("resource_id")
+
+  method      String?   @db.VarChar(10)
+  path        String?   @db.VarChar(255)
+  ip          String?   @db.VarChar(45)
+  userAgent   String?   @map("user_agent") @db.VarChar(500)
+
+  details     Json?
+  status      String    @db.VarChar(20) // SUCCESS / FAILED
+  errorMsg    String?   @map("error_msg") @db.Text
+
+  createdAt   DateTime  @default(now()) @map("created_at") @db.DateTime(0)
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("system_logs")
 }
