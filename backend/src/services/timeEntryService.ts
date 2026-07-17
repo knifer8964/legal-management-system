@@ -166,6 +166,16 @@ export class TimeEntryService {
     return this.format(updated);
   }
 
+  // 查询单条计时记录
+  async findById(id: number): Promise<TimeEntry | null> {
+    const entry = await prisma.timeEntry.findUnique({
+      where: { id },
+      include: { matter: true, client: true, user: true },
+    });
+    if (!entry) return null;
+    return this.format(entry);
+  }
+
   // 删除计时记录
   async delete(id: number): Promise<void> {
     await prisma.timeEntry.delete({ where: { id } });

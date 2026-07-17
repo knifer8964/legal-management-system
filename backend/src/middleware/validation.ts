@@ -95,7 +95,7 @@ export function validate(schema: ValidationSchema) {
   };
 }
 
-// ===== 业务验证 Schema =====
+// ===== 当前系统使用的验证 Schema =====
 
 export const authSchemas = {
   login: {
@@ -129,132 +129,6 @@ export const authSchemas = {
       oldPassword: Joi.string().required(),
       newPassword: Joi.string().min(6).max(100).required()
         .messages({ 'string.min': '新密码至少6个字符' }),
-    }),
-  },
-};
-
-export const contractSchemas = {
-  create: {
-    body: Joi.object({
-      contractNo: Joi.string().max(50).allow(null, ''), // 可选，不传则自动生成
-      title: Joi.string().max(255).required(),
-      partyA: Joi.string().max(255).required(),
-      partyB: Joi.string().max(255).required(),
-      contractType: Joi.string().max(50).allow(null, ''),
-      amount: Joi.number().precision(2).positive().allow(null),
-      signDate: Joi.date().iso().allow(null),
-      effectiveDate: Joi.date().iso().allow(null),
-      expiryDate: Joi.date().iso().allow(null),
-      content: Joi.string().allow(null, ''),
-    }),
-  },
-  update: {
-    params: Joi.object({ id: commonSchemas.id }),
-    body: Joi.object({
-      title: Joi.string().max(255),
-      partyA: Joi.string().max(255),
-      partyB: Joi.string().max(255),
-      contractType: Joi.string().max(50).allow(null, ''),
-      amount: Joi.number().precision(2).positive().allow(null),
-      signDate: Joi.date().iso().allow(null),
-      effectiveDate: Joi.date().iso().allow(null),
-      expiryDate: Joi.date().iso().allow(null),
-      content: Joi.string().allow(null, ''),
-      status: Joi.string().valid('DRAFT', 'REVIEWING', 'SIGNED', 'EXECUTING', 'COMPLETED', 'TERMINATED'),
-    }).min(1),
-  },
-  list: {
-    query: Joi.object({
-      page: commonSchemas.page,
-      pageSize: commonSchemas.pageSize,
-      keyword: commonSchemas.keyword,
-      status: Joi.string().valid('DRAFT', 'REVIEWING', 'SIGNED', 'EXECUTING', 'COMPLETED', 'TERMINATED'),
-      contractType: Joi.string().max(50),
-      sortField: commonSchemas.sortField,
-      sortOrder: commonSchemas.sortOrder,
-    }),
-  },
-  approve: {
-    params: Joi.object({ id: commonSchemas.id }),
-    body: Joi.object({
-      status: Joi.string().valid('APPROVED', 'REJECTED').required(),
-      comment: Joi.string().max(2000).allow(null, ''),
-    }),
-  },
-};
-
-export const caseSchemas = {
-  create: {
-    body: Joi.object({
-      caseNo: Joi.string().max(50).required(),
-      title: Joi.string().max(255).required(),
-      caseType: Joi.string().valid('CIVIL', 'ADMINISTRATIVE', 'CRIMINAL', 'ARBITRATION').required(),
-      plaintiff: Joi.string().allow(null, ''),
-      defendant: Joi.string().allow(null, ''),
-      court: Joi.string().max(255).allow(null, ''),
-      filingDate: Joi.date().iso().allow(null),
-      description: Joi.string().allow(null, ''),
-      assignedTo: Joi.number().integer().positive().allow(null),
-    }),
-  },
-  list: {
-    query: Joi.object({
-      page: commonSchemas.page,
-      pageSize: commonSchemas.pageSize,
-      keyword: commonSchemas.keyword,
-      status: Joi.string().valid('PENDING', 'TRIAL', 'APPEAL', 'ENFORCEMENT', 'CLOSED'),
-      caseType: Joi.string().valid('CIVIL', 'ADMINISTRATIVE', 'CRIMINAL', 'ARBITRATION'),
-      sortField: commonSchemas.sortField,
-      sortOrder: commonSchemas.sortOrder,
-    }),
-  },
-};
-
-export const agentSchemas = {
-  create: {
-    body: Joi.object({
-      agentName: Joi.string().max(100).required(),
-      agentType: Joi.string().valid('HUMAN', 'AI', 'EXPERT').required(),
-      apiEndpoint: Joi.string().max(500).allow(null, ''),
-      apiKeyEncrypted: Joi.string().max(500).allow(null, ''),
-      capabilities: Joi.object().allow(null),
-    }),
-  },
-  update: {
-    params: Joi.object({ id: commonSchemas.id }),
-    body: Joi.object({
-      agentName: Joi.string().max(100),
-      agentType: Joi.string().valid('HUMAN', 'AI', 'EXPERT'),
-      apiEndpoint: Joi.string().max(500).allow(null, ''),
-      apiKeyEncrypted: Joi.string().max(500).allow(null, ''),
-      capabilities: Joi.object().allow(null),
-      status: Joi.string().valid('ACTIVE', 'INACTIVE', 'BUSY'),
-    }).min(1),
-  },
-};
-
-export const knowledgeBaseSchemas = {
-  create: {
-    body: Joi.object({
-      name: Joi.string().max(200).required(),
-      description: Joi.string().allow(null, ''),
-      kbType: Joi.string().valid('PRIVATE', 'TEAM', 'PUBLIC').default('PRIVATE'),
-      config: Joi.object().allow(null),
-    }),
-  },
-  uploadDocument: {
-    params: Joi.object({ id: commonSchemas.id }),
-  },
-};
-
-export const orderSchemas = {
-  create: {
-    body: Joi.object({
-      customerName: Joi.string().max(100).required(),
-      customerPhone: Joi.string().max(20).allow(null, ''),
-      customerEmail: Joi.string().email().max(100).allow(null, ''),
-      productId: Joi.number().integer().positive().required(),
-      assignedAgentId: Joi.number().integer().positive().allow(null),
     }),
   },
 };

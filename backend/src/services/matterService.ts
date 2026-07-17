@@ -54,7 +54,7 @@ export class MatterService {
   // =====================================================
   // 更新业务事项
   // =====================================================
-  async update(id: number, data: Partial<CreateMatterDto>, _userId: number): Promise<Matter> {
+  async update(id: number, data: Partial<CreateMatterDto>, userId: number): Promise<Matter> {
     const updateData: any = { ...data };
 
     // 处理日期
@@ -73,6 +73,17 @@ export class MatterService {
         assignee: true,
         createdBy: true,
         _count: { select: { tasks: true, timeEntries: true, invoices: true } },
+      },
+    });
+
+    // 记录操作审计
+    await prisma.timelineEvent.create({
+      data: {
+        matterId: id,
+        operatorId: userId,
+        eventType: 'SYSTEM',
+        title: '业务信息更新',
+        description: `更新了业务 "${matter.title}" 的信息`,
       },
     });
 

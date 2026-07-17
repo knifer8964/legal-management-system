@@ -83,7 +83,7 @@ export class TimeEntryController {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) return Errors.badRequest(res, '无效ID');
-      return success(res, await timeEntryService.update(id, {}));
+      return success(res, await timeEntryService.findById(id));
     } catch (err: any) { return next(err); }
   }
 
