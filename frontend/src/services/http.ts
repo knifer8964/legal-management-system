@@ -6,7 +6,7 @@ class HttpService {
   private baseURL: string;
 
   constructor() {
-    this.baseURL = 'http://localhost:3000/api/v1';
+    this.baseURL = 'http://127.0.0.1:3000/api/v1';
     
     this.instance = axios.create({
       baseURL: this.baseURL,

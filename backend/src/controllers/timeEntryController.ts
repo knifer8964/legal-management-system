@@ -83,7 +83,9 @@ export class TimeEntryController {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) return Errors.badRequest(res, '无效ID');
-      return success(res, await timeEntryService.findById(id));
+      const entry = await timeEntryService.findById(id);
+      if (!entry) return Errors.notFound(res, '计时记录不存在');
+      return success(res, entry);
     } catch (err: any) { return next(err); }
   }
 

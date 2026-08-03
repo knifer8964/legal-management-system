@@ -1,215 +1,155 @@
-import React, { useEffect, useState } from 'react';
-import { Card, Row, Col, Statistic, Table, Tag, Space, Spin } from 'antd';
+import React, { useEffect } from 'react';
+import { Row, Col, Card, Statistic, Table, List, Tag, Typography, Spin } from 'antd';
 import {
-  FileTextOutlined,
-  CheckCircleOutlined,
-  ClockCircleOutlined,
-  WarningOutlined,
-  UserOutlined,
-  AuditOutlined,
+  TeamOutlined, FolderOpenOutlined, CheckSquareOutlined,
+  ClockCircleOutlined, DollarOutlined, ArrowUpOutlined,
 } from '@ant-design/icons';
-import { getDashboardStats } from '../services/dashboardService';
-import { DashboardStats, ContractStatus } from '../../types/api';
 import { useNavigate } from 'react-router-dom';
+import { useClientStore } from '../stores/clientStore';
+import { useMatterStore } from '../stores/matterStore';
+import { useTaskStore } from '../stores/taskStore';
+import { useTimeEntryStore } from '../stores/timeEntryStore';
+import { Matter, Task } from '../types/api';
+
+const { Title } = Typography;
+
+const matterStatusColors: Record<string, string> = {
+  PENDING: 'default', IN_PROGRESS: 'processing', COMPLETED: 'success', CANCELLED: 'error',
+};
+const matterStatusLabels: Record<string, string> = {
+  PENDING: '待处理', IN_PROGRESS: '进行中', COMPLETED: '已完成', CANCELLED: '已取消',
+};
+const priorityColors: Record<string, string> = { HIGH: 'red', MEDIUM: 'orange', LOW: 'blue' };
+const priorityLabels: Record<string, string> = { HIGH: '高', MEDIUM: '中', LOW: '低' };
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { clients, fetchClients, loading: clientsLoading } = useClientStore();
+  const { matters, fetchMatters, loading: mattersLoading } = useMatterStore();
+  const { tasks, fetchTasks, loading: tasksLoading } = useTaskStore();
+  const { entries, fetchEntries, running, elapsed, fetchRunning } = useTimeEntryStore();
 
   useEffect(() => {
-    loadStats();
+    fetchClients({ page: 1, pageSize: 100 });
+    fetchMatters({ page: 1, pageSize: 100 });
+    fetchTasks({ page: 1, pageSize: 100 });
+    fetchEntries({ page: 1, pageSize: 100 });
+    fetchRunning();
   }, []);
 
-  const loadStats = async () => {
-    try {
-      setLoading(true);
-      const data = await getDashboardStats();
-      setStats(data);
-    } catch (error) {
-      console.error('Failed to load dashboard stats:', error);
-    } finally {
-      setLoading(false);
-    }
+  const activeMatters = matters.filter((m) => m.status === 'IN_PROGRESS' || m.status === 'PENDING');
+  const pendingTasks = tasks.filter((t) => t.status === 'TODO');
+  const todayTime = entries.reduce((s, e) => s + (e.duration || 0), 0);
+  const todayBilling = entries.reduce((s, e) => s + (e.amount || 0), 0);
+  const formatDuration = (min: number) => {
+    if (min < 60) return `${min}分`;
+    return `${(min / 60).toFixed(1)}时`;
   };
-
-  const handleViewContracts = () => {
-    navigate('/contracts');
-  };
-
-  if (loading) {
-    return (
-      <div style={{ textAlign: 'center', padding: '50px' }}>
-        <Spin size="large" />
-        <div style={{ marginTop: 16 }}>加载中...</div>
-      </div>
-    );
-  }
-
-  const contractStats = stats?.contractStats || {
-    total: 0,
-    draft: 0,
-    reviewing: 0,
-    signed: 0,
-    executing: 0,
-    completed: 0,
-  };
-
-  const statusColorMap: Record<string, string> = {
-    DRAFT: 'default',
-    REVIEWING: 'processing',
-    SIGNED: 'success',
-    EXECUTING: 'warning',
-    COMPLETED: 'success',
-    TERMINATED: 'error',
-  };
-
-  const statusTextMap: Record<string, string> = {
-    DRAFT: '草稿',
-    REVIEWING: '审批中',
-    SIGNED: '已签署',
-    EXECUTING: '履行中',
-    COMPLETED: '已完成',
-    TERMINATED: '已终止',
-  };
-
-  const recentContracts = stats?.recentContracts || [];
-  const recentContractsFormatted = recentContracts.map((c, idx) => ({
-    key: c.id || idx,
-    contractNo: c.contractNo,
-    title: c.title,
-    status: c.status,
-    amount: c.amount,
-    signDate: c.signDate,
-  }));
-
-  const columns = [
-    {
-      title: '合同编号',
-      dataIndex: 'contractNo',
-      key: 'contractNo',
-    },
-    {
-      title: '标题',
-      dataIndex: 'title',
-      key: 'title',
-      ellipsis: true,
-    },
-    {
-      title: '状态',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status: string) => (
-        <Tag color={statusColorMap[status] || 'default'}>
-          {statusTextMap[status] || status}
-        </Tag>
-      ),
-    },
-    {
-      title: '金额',
-      dataIndex: 'amount',
-      key: 'amount',
-      render: (amount: number) => amount ? `¥${amount.toLocaleString()}` : '-',
-    },
-    {
-      title: '签署日期',
-      dataIndex: 'signDate',
-      key: 'signDate',
-      render: (date: string) => date || '-',
-    },
-  ];
 
   return (
     <div>
-      <h1 style={{ marginBottom: 24 }}>仪表盘</h1>
+      <Title level={4} style={{ marginBottom: 24 }}>工作概览</Title>
 
-      <Row gutter={16} style={{ marginBottom: 24 }}>
-        <Col span={6}>
-          <Card hoverable onClick={handleViewContracts} style={{ cursor: 'pointer' }}>
-            <Statistic
-              title="合同总数"
-              value={contractStats.total}
-              prefix={<FileTextOutlined />}
-              valueStyle={{ color: '#1890ff' }}
-            />
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={12} lg={6}>
+          <Card hoverable onClick={() => navigate('/clients')}>
+            <Statistic title="客户总数" value={clients.length} prefix={<TeamOutlined />} />
           </Card>
         </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="草稿"
-              value={contractStats.draft}
-              prefix={<ClockCircleOutlined />}
-              valueStyle={{ color: '#faad14' }}
-            />
+        <Col xs={24} sm={12} lg={6}>
+          <Card hoverable onClick={() => navigate('/matters')}>
+            <Statistic title="业务事项" value={matters.length}
+              suffix={<Text type="secondary">/ {activeMatters.length} 进行中</Text>}
+              prefix={<FolderOpenOutlined />} />
           </Card>
         </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="审批中"
-              value={contractStats.reviewing}
-              prefix={<WarningOutlined />}
-              valueStyle={{ color: '#f5222d' }}
-            />
+        <Col xs={24} sm={12} lg={6}>
+          <Card hoverable onClick={() => navigate('/tasks')}>
+            <Statistic title="待办任务" value={pendingTasks.length}
+              valueStyle={{ color: pendingTasks.length > 5 ? '#cf1322' : undefined }}
+              prefix={<CheckSquareOutlined />} />
           </Card>
         </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="已签署"
-              value={contractStats.signed}
-              prefix={<CheckCircleOutlined />}
-              valueStyle={{ color: '#52c41a' }}
-            />
+        <Col xs={24} sm={12} lg={6}>
+          <Card hoverable onClick={() => navigate('/time')}>
+            <Statistic title="今日计时" value={formatDuration(todayTime)}
+              prefix={<ClockCircleOutlined />} />
           </Card>
         </Col>
       </Row>
 
-      <Row gutter={16} style={{ marginBottom: 24 }}>
-        <Col span={8}>
-          <Card>
-            <Statistic
-              title="用户总数"
-              value={stats?.userStats?.total || 0}
-              prefix={<UserOutlined />}
-              valueStyle={{ color: '#722ed1' }}
+      {/* Timer Bar */}
+      {running && (
+        <Card style={{ marginTop: 16, background: '#e6f7ff', border: '1px solid #91d5ff' }}>
+          <Row align="middle" justify="space-between">
+            <Col>
+              <Text strong style={{ fontSize: 16 }}>⏱️ 正在计时</Text>
+              <Text style={{ marginLeft: 16 }}>{running.description}</Text>
+              <Tag color="blue" style={{ marginLeft: 8 }}>{running.matter?.title}</Tag>
+            </Col>
+            <Col>
+              <Title level={2} type="success" style={{ margin: 0, fontFamily: 'monospace' }}>
+                {Math.floor(elapsed / 3600).toString().padStart(2, '0')}:
+                {Math.floor((elapsed % 3600) / 60).toString().padStart(2, '0')}:
+                {(elapsed % 60).toString().padStart(2, '0')}
+              </Title>
+            </Col>
+          </Row>
+        </Card>
+      )}
+
+      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+        {/* 进行中的业务 */}
+        <Col xs={24} lg={12}>
+          <Card title="进行中的业务" extra={<a onClick={() => navigate('/matters')}>查看全部</a>}>
+            <List
+              loading={mattersLoading}
+              dataSource={activeMatters.slice(0, 5)}
+              renderItem={(item: Matter) => (
+                <List.Item
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => navigate(`/matters/${item.id}`)}
+                >
+                  <List.Item.Meta
+                    title={<Text strong>{item.matterNo} — {item.title}</Text>}
+                    description={`${item.client?.name || ''} · ${item.deadline ? '截止 ' + new Date(item.deadline).toLocaleDateString() : '无截止日'}`}
+                  />
+                  <Space>
+                    <Tag color={priorityColors[item.priority]}>{priorityLabels[item.priority]}</Tag>
+                    <Tag color={matterStatusColors[item.status]}>{matterStatusLabels[item.status]}</Tag>
+                  </Space>
+                </List.Item>
+              )}
+              locale={{ emptyText: '暂无进行中的业务' }}
             />
           </Card>
         </Col>
-        <Col span={8}>
-          <Card>
-            <Statistic
-              title="案件总数"
-              value={stats?.caseStats?.total || 0}
-              prefix={<AuditOutlined />}
-              valueStyle={{ color: '#13c2c2' }}
-            />
-          </Card>
-        </Col>
-        <Col span={8}>
-          <Card>
-            <Statistic
-              title="本月新增合同"
-              value={stats?.monthlyNewContracts || 0}
-              prefix={<FileTextOutlined />}
-              valueStyle={{ color: '#fa8c16' }}
+
+        {/* 待办任务 */}
+        <Col xs={24} lg={12}>
+          <Card title="待办任务" extra={<a onClick={() => navigate('/tasks')}>查看全部</a>}>
+            <List
+              loading={tasksLoading}
+              dataSource={pendingTasks.slice(0, 5)}
+              renderItem={(item: Task) => (
+                <List.Item style={{ cursor: 'pointer' }}>
+                  <List.Item.Meta
+                    title={
+                      <Space>
+                        <Text strong>{item.title}</Text>
+                        {item.dueDate && new Date(item.dueDate) < new Date() && <Tag color="red">逾期</Tag>}
+                      </Space>
+                    }
+                    description={`${item.matter?.title || ''} · ${item.dueDate ? '截止 ' + new Date(item.dueDate).toLocaleDateString() : '无截止日'}`}
+                  />
+                  <Tag color={priorityColors[item.priority]}>{priorityLabels[item.priority]}</Tag>
+                </List.Item>
+              )}
+              locale={{ emptyText: '🎉 没有待办任务' }}
             />
           </Card>
         </Col>
       </Row>
-
-      <Card title="最近合同" extra={
-        <a onClick={handleViewContracts} style={{ cursor: 'pointer' }}>查看全部</a>
-      } style={{ marginTop: 24 }}>
-        <Table
-          columns={columns}
-          dataSource={recentContractsFormatted}
-          pagination={false}
-          size="small"
-          locale={{ emptyText: '暂无合同数据' }}
-        />
-      </Card>
     </div>
   );
 };

@@ -12,40 +12,45 @@ export class MatterService {
   // 创建业务事项
   // =====================================================
   async create(data: CreateMatterDto, userId: number): Promise<Matter> {
-    const matter = await prisma.matter.create({
-      data: {
-        matterNo: await this.generateMatterNo(data.matterType),
-        matterType: data.matterType,
-        title: data.title,
-        description: data.description || null,
-        clientId: data.clientId,
-        status: data.status || 'PENDING',
-        priority: data.priority || 'MEDIUM',
-        feeType: data.feeType,
-        feeAmount: data.feeAmount || null,
-        hourlyRate: data.hourlyRate || null,
-        startDate: data.startDate ? new Date(data.startDate) : null,
-        deadline: data.deadline ? new Date(data.deadline) : null,
-        assigneeId: data.assigneeId || null,
-        createdById: userId,
-        metadata: data.metadata || undefined,
-      },
-      include: {
-        client: true,
-        assignee: true,
-        createdBy: true,
-      },
-    });
+    const matterNo = await this.generateMatterNo(data.matterType);
 
-    // 创建时间线记录
-    await prisma.timelineEvent.create({
-      data: {
-        matterId: matter.id,
-        operatorId: userId,
-        eventType: 'STATUS_CHANGE',
-        title: '创建业务事项',
-        description: `创建了${this.getMatterTypeLabel(matter.matterType)}业务: ${matter.title}`,
-      },
+    const matter = await prisma.$transaction(async (tx) => {
+      const created = await tx.matter.create({
+        data: {
+          matterNo,
+          matterType: data.matterType,
+          title: data.title,
+          description: data.description || null,
+          clientId: data.clientId,
+          status: data.status || 'PENDING',
+          priority: data.priority || 'MEDIUM',
+          feeType: data.feeType,
+          feeAmount: data.feeAmount || null,
+          hourlyRate: data.hourlyRate || null,
+          startDate: data.startDate ? new Date(data.startDate) : null,
+          deadline: data.deadline ? new Date(data.deadline) : null,
+          assigneeId: data.assigneeId || null,
+          createdById: userId,
+          metadata: data.metadata || undefined,
+        },
+        include: {
+          client: true,
+          assignee: true,
+          createdBy: true,
+        },
+      });
+
+      await tx.timelineEvent.create({
+        data: {
+          matterId: created.id,
+          operatorId: userId,
+          eventType: 'STATUS_CHANGE',
+          title: '创建业务事项',
+          description: `创建了${this.getMatterTypeLabel(created.matterType)}业务: ${created.title}`,
+        },
+      });
+
+      return created;
     });
 
     return this.formatMatter(matter);
@@ -65,27 +70,30 @@ export class MatterService {
       updateData.deadline = data.deadline ? new Date(data.deadline) : null;
     }
 
-    const matter = await prisma.matter.update({
-      where: { id },
-      data: updateData,
-      include: {
-        client: true,
-        assignee: true,
-        createdBy: true,
-        _count: { select: { tasks: true, timeEntries: true, invoices: true } },
-      },
-    });
+    // 先获取旧记录用于审计描述
+    const oldMatter = await prisma.matter.findUnique({ where: { id }, select: { title: true } });
 
-    // 记录操作审计
-    await prisma.timelineEvent.create({
-      data: {
-        matterId: id,
-        operatorId: userId,
-        eventType: 'SYSTEM',
-        title: '业务信息更新',
-        description: `更新了业务 "${matter.title}" 的信息`,
-      },
-    });
+    const [matter] = await prisma.$transaction([
+      prisma.matter.update({
+        where: { id },
+        data: updateData,
+        include: {
+          client: true,
+          assignee: true,
+          createdBy: true,
+          _count: { select: { tasks: true, timeEntries: true, invoices: true } },
+        },
+      }),
+      prisma.timelineEvent.create({
+        data: {
+          matterId: id,
+          operatorId: userId,
+          eventType: 'SYSTEM',
+          title: '业务信息更新',
+          description: `更新了业务 "${oldMatter?.title || '未知'}" 的信息`,
+        },
+      }),
+    ]);
 
     return this.formatMatter(matter);
   }

@@ -47,11 +47,27 @@ export class TimeEntryService {
 
   // 停止计时
   async stop(id: number): Promise<TimeEntry> {
-    const entry = await prisma.timeEntry.findUnique({ where: { id } });
-    if (!entry) throw new Error('计时记录不存在');
-    if (entry.endTime) throw new Error('计时已停止');
-
     const endTime = new Date();
+
+    // 原子操作：update 的 where 条件中加 endTime: null 守卫，防止并发重复停止
+    const entry = await prisma.timeEntry.update({
+      where: { id, endTime: null },
+      data: {
+        endTime,
+        duration: 0, // 先占位，下面按实际时间更新
+        amount: 0,
+      },
+      include: { matter: true, client: true, user: true },
+    }).catch(() => null);
+
+    if (!entry) {
+      // 记录可能已被停止或不存在
+      const existing = await prisma.timeEntry.findUnique({ where: { id } });
+      if (!existing) throw new Error('计时记录不存在');
+      if (existing.endTime) throw new Error('计时已停止');
+      throw new Error('停止计时失败');
+    }
+
     const duration = Math.round((endTime.getTime() - entry.startTime.getTime()) / 60000);
     const amount = entry.isBillable
       ? Math.round(Number(entry.hourlyRate) * (duration / 60) * 100) / 100
@@ -59,15 +75,17 @@ export class TimeEntryService {
 
     const updated = await prisma.timeEntry.update({
       where: { id },
-      data: { endTime, duration, amount },
+      data: { duration, amount },
       include: { matter: true, client: true, user: true },
     });
 
     // 更新业务的累计金额和时长
-    const matterStats = await prisma.timeEntry.aggregate({
-      where: { matterId: entry.matterId },
-      _sum: { duration: true, amount: true },
-    });
+    const [matterStats] = await Promise.all([
+      prisma.timeEntry.aggregate({
+        where: { matterId: entry.matterId },
+        _sum: { duration: true, amount: true },
+      }),
+    ]);
 
     await prisma.matter.update({
       where: { id: entry.matterId },

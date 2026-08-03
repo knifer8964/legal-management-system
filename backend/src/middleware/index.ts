@@ -2,7 +2,7 @@
 // 功能: 集中管理所有中间件，方便路由引用
 
 export { authenticateToken, checkPermission, optionalAuth } from './authMiddleware';
-export { AppError, Errors as ErrorClasses, errorHandler, notFoundHandler } from './errorHandler';
+export { AppError, Errors, errorHandler, notFoundHandler } from './errorHandler';
 export { validate, commonSchemas, authSchemas } from './validation';
 export { requestTracker, requestLogger, requestBodyLogger } from './requestLogger';
 export { uploadDocument, uploadImage, uploadAvatar, uploadGeneral, uploadKnowledgeDoc, handleMulterError } from './upload';
