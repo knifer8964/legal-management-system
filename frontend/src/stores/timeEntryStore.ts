@@ -1,76 +1,65 @@
 import { create } from 'zustand';
 import { timeEntryService } from '../services/timeEntryService';
-import { TimeEntry, TimeEntryFormData } from '../types/api';
+import { TimeEntry, CreateTimeEntryDto, UpdateTimeEntryDto, TimeEntryQueryParams } from '../types/api';
+
+interface Pagination {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
 
 interface TimeEntryState {
   entries: TimeEntry[];
-  total: number;
-  loading: boolean;
   running: TimeEntry | null;
-  elapsed: number; // seconds since start
-  timerRef: number | null;
-  fetchEntries: (params?: { page?: number; pageSize?: number; matterId?: number }) => Promise<void>;
+  elapsed: number; // seconds
+  loading: boolean;
+  pagination: Pagination;
+  fetchEntries: (params?: TimeEntryQueryParams) => Promise<void>;
   fetchRunning: () => Promise<void>;
-  startTimer: (data: { matterId: number; clientId: number; description: string; isBillable?: boolean }) => Promise<void>;
-  stopTimer: (id: number) => Promise<void>;
-  createManual: (data: TimeEntryFormData) => Promise<void>;
-  remove: (id: number) => Promise<void>;
   tickElapsed: () => void;
-  clearTimer: () => void;
+  startTimer: (data: CreateTimeEntryDto) => Promise<TimeEntry>;
+  stopTimer: (id: number) => Promise<TimeEntry>;
+  updateEntry: (id: number, data: UpdateTimeEntryDto) => Promise<TimeEntry>;
+  deleteEntry: (id: number) => Promise<void>;
 }
+
+let timerInterval: any = null;
 
 export const useTimeEntryStore = create<TimeEntryState>((set, get) => ({
   entries: [],
-  total: 0,
-  loading: false,
   running: null,
   elapsed: 0,
-  timerRef: null,
+  loading: false,
+  pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 },
 
-  fetchEntries: async (params) => {
+  fetchEntries: async (params = { page: 1, pageSize: 10 }) => {
     set({ loading: true });
     try {
-      const res = await timeEntryService.list(params);
-      set({ entries: res.data.items, total: res.data.total, loading: false });
-    } catch { set({ loading: false }); }
+      const result = await timeEntryService.list(params);
+      set({ entries: result.data, pagination: result.pagination, loading: false });
+    } finally {
+      set({ loading: false });
+    }
   },
 
   fetchRunning: async () => {
-    try {
-      const res = await timeEntryService.getRunning();
-      const running = res.data;
-      if (running) {
-        set({ running });
-        const start = new Date(running.startTime).getTime();
-        set({ elapsed: Math.floor((Date.now() - start) / 1000) });
-      } else {
-        set({ running: null, elapsed: 0 });
-      }
-    } catch { /* noop */ }
-  },
-
-  startTimer: async (data) => {
-    const res = await timeEntryService.start(data);
-    const running = res.data;
+    const running = await timeEntryService.getRunning();
     set({ running });
-    const start = new Date(running.startTime).getTime();
-    set({ elapsed: Math.floor((Date.now() - start) / 1000) });
-  },
-
-  stopTimer: async (id) => {
-    await timeEntryService.stop(id);
-    set({ running: null, elapsed: 0 });
-    get().fetchEntries({ page: 1, pageSize: 20 });
-  },
-
-  createManual: async (data) => {
-    await timeEntryService.createManual(data);
-    get().fetchEntries({ page: 1, pageSize: 20 });
-  },
-
-  remove: async (id) => {
-    await timeEntryService.remove(id);
-    set((s) => ({ entries: s.entries.filter((e) => e.id !== id) }));
+    if (running) {
+      const start = new Date(running.startTime).getTime();
+      const now = Date.now();
+      set({ elapsed: Math.floor((now - start) / 1000) });
+      if (!timerInterval) {
+        timerInterval = setInterval(() => get().tickElapsed(), 1000);
+      }
+    } else {
+      set({ elapsed: 0 });
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
   },
 
   tickElapsed: () => {
@@ -81,9 +70,39 @@ export const useTimeEntryStore = create<TimeEntryState>((set, get) => ({
     }
   },
 
-  clearTimer: () => {
-    const { timerRef } = get();
-    if (timerRef) clearInterval(timerRef);
-    set({ timerRef: null });
+  startTimer: async (data) => {
+    const entry = await timeEntryService.start(data);
+    set({ running: entry });
+    await get().fetchRunning();
+    return entry;
+  },
+
+  stopTimer: async (id) => {
+    const entry = await timeEntryService.stop(id);
+    set((state) => ({
+      entries: [entry, ...state.entries],
+      running: null,
+      elapsed: 0,
+    }));
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+    return entry;
+  },
+
+  updateEntry: async (id, data) => {
+    const entry = await timeEntryService.update(id, data);
+    set((state) => ({
+      entries: state.entries.map((e) => (e.id === id ? entry : e)),
+    }));
+    return entry;
+  },
+
+  deleteEntry: async (id) => {
+    await timeEntryService.remove(id);
+    set((state) => ({
+      entries: state.entries.filter((e) => e.id !== id),
+    }));
   },
 }));

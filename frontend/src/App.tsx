@@ -6,6 +6,11 @@ import useAuthStore from './stores/authStore';
 import AppLayout from './layouts/AppLayout';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
+import ClientListPage from './pages/ClientListPage';
+import MatterListPage from './pages/MatterListPage';
+import TaskBoardPage from './pages/TaskBoardPage';
+import TimeEntryPage from './pages/TimeEntryPage';
+import CommunicationPage from './pages/CommunicationPage';
 
 // 路由守卫
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -13,20 +18,6 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   return <>{children}</>;
 };
-
-// 临时占位页面（逐步替换为真实页面）
-const Placeholder: React.FC<{ title: string }> = ({ title }) => (
-  <div style={{ textAlign: 'center', padding: 80 }}>
-    <h2>{title}</h2>
-    <p>页面开发中，即将上线</p>
-  </div>
-);
-
-const ClientListPage = () => <Placeholder title="客户管理" />;
-const MatterListPage = () => <Placeholder title="业务事项" />;
-const TaskBoardPage = () => <Placeholder title="任务管理" />;
-const TimeEntryPage = () => <Placeholder title="计时收费" />;
-const CommunicationPage = () => <Placeholder title="沟通记录" />;
 
 const App: React.FC = () => {
   return (

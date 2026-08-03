@@ -1,84 +1,61 @@
 import { create } from 'zustand';
 import { matterService } from '../services/matterService';
-import { Matter, MatterFormData } from '../types/api';
+import { Matter, CreateMatterDto, UpdateMatterDto, MatterQueryParams } from '../types/api';
+
+interface Pagination {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
 
 interface MatterState {
   matters: Matter[];
-  total: number;
   loading: boolean;
-  error: string | null;
-  current: Matter | null;
-  timeline: any[];
-  fetchMatters: (params?: { page?: number; pageSize?: number; status?: string; clientId?: number }) => Promise<void>;
-  fetchById: (id: number) => Promise<void>;
-  fetchTimeline: (id: number) => Promise<void>;
-  create: (data: MatterFormData) => Promise<Matter>;
-  update: (id: number, data: Partial<MatterFormData>) => Promise<Matter>;
-  updateStatus: (id: number, status: string) => Promise<Matter>;
-  remove: (id: number) => Promise<void>;
-  clearCurrent: () => void;
+  pagination: Pagination;
+  fetchMatters: (params?: MatterQueryParams) => Promise<void>;
+  createMatter: (data: CreateMatterDto) => Promise<Matter>;
+  updateMatter: (id: number, data: UpdateMatterDto) => Promise<Matter>;
+  deleteMatter: (id: number) => Promise<void>;
 }
 
-export const useMatterStore = create<MatterState>((set, get) => ({
+export const useMatterStore = create<MatterState>((set) => ({
   matters: [],
-  total: 0,
   loading: false,
-  error: null,
-  current: null,
-  timeline: [],
+  pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 },
 
-  fetchMatters: async (params) => {
-    set({ loading: true, error: null });
+  fetchMatters: async (params = { page: 1, pageSize: 10 }) => {
+    set({ loading: true });
     try {
-      const res = await matterService.list(params);
-      set({ matters: res.data.items, total: res.data.total, loading: false });
-    } catch (e: any) {
-      set({ error: e.response?.data?.error?.message || '加载业务列表失败', loading: false });
+      const result = await matterService.list(params);
+      set({
+        matters: result.data,
+        pagination: result.pagination,
+        loading: false,
+      });
+    } finally {
+      set({ loading: false });
     }
   },
 
-  fetchById: async (id) => {
-    set({ loading: true, error: null });
-    try {
-      const res = await matterService.getById(id);
-      set({ current: res.data, loading: false });
-    } catch (e: any) {
-      set({ error: e.response?.data?.error?.message || '加载业务详情失败', loading: false });
-    }
+  createMatter: async (data) => {
+    const matter = await matterService.create(data);
+    set((state) => ({ matters: [matter, ...state.matters] }));
+    return matter;
   },
 
-  fetchTimeline: async (id) => {
-    try {
-      const res = await matterService.timeline(id);
-      set({ timeline: res.data });
-    } catch { /* timeline 可选 */ }
+  updateMatter: async (id, data) => {
+    const matter = await matterService.update(id, data);
+    set((state) => ({
+      matters: state.matters.map((m) => (m.id === id ? matter : m)),
+    }));
+    return matter;
   },
 
-  create: async (data) => {
-    const res = await matterService.create(data);
-    get().fetchMatters({ page: 1, pageSize: 20 });
-    return res.data;
-  },
-
-  update: async (id, data) => {
-    const res = await matterService.update(id, data);
-    set({ current: res.data });
-    get().fetchMatters({ page: 1, pageSize: 20 });
-    return res.data;
-  },
-
-  updateStatus: async (id, status) => {
-    const res = await matterService.updateStatus(id, status);
-    set({ current: res.data });
-    get().fetchMatters({ page: 1, pageSize: 20 });
-    return res.data;
-  },
-
-  remove: async (id) => {
+  deleteMatter: async (id) => {
     await matterService.remove(id);
-    set({ current: null });
-    get().fetchMatters({ page: 1, pageSize: 20 });
+    set((state) => ({
+      matters: state.matters.filter((m) => m.id !== id),
+    }));
   },
-
-  clearCurrent: () => set({ current: null, timeline: [] }),
 }));

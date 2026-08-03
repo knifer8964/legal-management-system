@@ -1,58 +1,70 @@
 import { create } from 'zustand';
 import { taskService } from '../services/taskService';
-import { Task, TaskFormData } from '../types/api';
+import { Task, CreateTaskDto, UpdateTaskDto, TaskQueryParams } from '../types/api';
+
+interface Pagination {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
 
 interface TaskState {
   tasks: Task[];
-  total: number;
   loading: boolean;
-  error: string | null;
-  fetchTasks: (params?: { page?: number; pageSize?: number; matterId?: number; status?: string }) => Promise<void>;
-  create: (data: TaskFormData) => Promise<Task>;
-  toggle: (id: number) => Promise<Task>;
-  update: (id: number, data: Partial<TaskFormData>) => Promise<Task>;
-  remove: (id: number) => Promise<void>;
+  pagination: Pagination;
+  fetchTasks: (params?: TaskQueryParams) => Promise<void>;
+  createTask: (data: CreateTaskDto) => Promise<Task>;
+  updateTask: (id: number, data: UpdateTaskDto) => Promise<Task>;
+  toggleTask: (id: number) => Promise<Task>;
+  deleteTask: (id: number) => Promise<void>;
 }
 
-export const useTaskStore = create<TaskState>((set, get) => ({
+export const useTaskStore = create<TaskState>((set) => ({
   tasks: [],
-  total: 0,
   loading: false,
-  error: null,
+  pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 },
 
-  fetchTasks: async (params) => {
-    set({ loading: true, error: null });
+  fetchTasks: async (params = { page: 1, pageSize: 10 }) => {
+    set({ loading: true });
     try {
-      const res = await taskService.list(params);
-      set({ tasks: res.data.items, total: res.data.total, loading: false });
-    } catch (e: any) {
-      set({ error: e.response?.data?.error?.message || '加载任务失败', loading: false });
+      const result = await taskService.list(params);
+      set({
+        tasks: result.data,
+        pagination: result.pagination,
+        loading: false,
+      });
+    } finally {
+      set({ loading: false });
     }
   },
 
-  create: async (data) => {
-    const res = await taskService.create(data);
-    get().fetchTasks({ page: 1, pageSize: 50 });
-    return res.data;
+  createTask: async (data) => {
+    const task = await taskService.create(data);
+    set((state) => ({ tasks: [task, ...state.tasks] }));
+    return task;
   },
 
-  toggle: async (id) => {
-    const res = await taskService.toggleStatus(id);
-    // 局部更新列表中的条目
-    set((s) => ({
-      tasks: s.tasks.map((t) => (t.id === id ? res.data : t)),
+  updateTask: async (id, data) => {
+    const task = await taskService.update(id, data);
+    set((state) => ({
+      tasks: state.tasks.map((t) => (t.id === id ? task : t)),
     }));
-    return res.data;
+    return task;
   },
 
-  update: async (id, data) => {
-    const res = await taskService.update(id, data);
-    set((s) => ({ tasks: s.tasks.map((t) => (t.id === id ? res.data : t)) }));
-    return res.data;
+  toggleTask: async (id) => {
+    const task = await taskService.toggle(id);
+    set((state) => ({
+      tasks: state.tasks.map((t) => (t.id === id ? task : t)),
+    }));
+    return task;
   },
 
-  remove: async (id) => {
+  deleteTask: async (id) => {
     await taskService.remove(id);
-    set((s) => ({ tasks: s.tasks.filter((t) => t.id !== id) }));
+    set((state) => ({
+      tasks: state.tasks.filter((t) => t.id !== id),
+    }));
   },
 }));

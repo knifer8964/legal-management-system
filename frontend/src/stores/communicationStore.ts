@@ -1,37 +1,61 @@
 import { create } from 'zustand';
 import { communicationService } from '../services/communicationService';
-import { Communication, CommunicationFormData } from '../types/api';
+import { Communication, CreateCommunicationDto, UpdateCommunicationDto, CommunicationQueryParams } from '../types/api';
+
+interface Pagination {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
 
 interface CommunicationState {
   communications: Communication[];
-  total: number;
   loading: boolean;
-  fetchCommunications: (params?: { page?: number; pageSize?: number; matterId?: number; clientId?: number }) => Promise<void>;
-  create: (data: CommunicationFormData) => Promise<Communication>;
-  remove: (id: number) => Promise<void>;
+  pagination: Pagination;
+  fetchCommunications: (params?: CommunicationQueryParams) => Promise<void>;
+  createCommunication: (data: CreateCommunicationDto) => Promise<Communication>;
+  updateCommunication: (id: number, data: UpdateCommunicationDto) => Promise<Communication>;
+  deleteCommunication: (id: number) => Promise<void>;
 }
 
-export const useCommunicationStore = create<CommunicationState>((set, get) => ({
+export const useCommunicationStore = create<CommunicationState>((set) => ({
   communications: [],
-  total: 0,
   loading: false,
+  pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 },
 
-  fetchCommunications: async (params) => {
+  fetchCommunications: async (params = { page: 1, pageSize: 10 }) => {
     set({ loading: true });
     try {
-      const res = await communicationService.list(params);
-      set({ communications: res.data.items, total: res.data.total, loading: false });
-    } catch { set({ loading: false }); }
+      const result = await communicationService.list(params);
+      set({
+        communications: result.data,
+        pagination: result.pagination,
+        loading: false,
+      });
+    } finally {
+      set({ loading: false });
+    }
   },
 
-  create: async (data) => {
-    const res = await communicationService.create(data);
-    get().fetchCommunications({ page: 1, pageSize: 20 });
-    return res.data;
+  createCommunication: async (data) => {
+    const item = await communicationService.create(data);
+    set((state) => ({ communications: [item, ...state.communications] }));
+    return item;
   },
 
-  remove: async (id) => {
+  updateCommunication: async (id, data) => {
+    const item = await communicationService.update(id, data);
+    set((state) => ({
+      communications: state.communications.map((c) => (c.id === id ? item : c)),
+    }));
+    return item;
+  },
+
+  deleteCommunication: async (id) => {
     await communicationService.remove(id);
-    set((s) => ({ communications: s.communications.filter((c) => c.id !== id) }));
+    set((state) => ({
+      communications: state.communications.filter((c) => c.id !== id),
+    }));
   },
 }));

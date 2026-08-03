@@ -1,66 +1,61 @@
 import { create } from 'zustand';
 import { clientService } from '../services/clientService';
-import { Client, ClientFormData } from '../types/api';
+import { Client, CreateClientDto, UpdateClientDto, ClientQueryParams } from '../types/api';
+
+interface Pagination {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
 
 interface ClientState {
   clients: Client[];
-  total: number;
   loading: boolean;
-  error: string | null;
-  current: Client | null;
-  fetchClients: (params?: { page?: number; pageSize?: number; keyword?: string }) => Promise<void>;
-  fetchById: (id: number) => Promise<void>;
-  create: (data: ClientFormData) => Promise<Client>;
-  update: (id: number, data: Partial<ClientFormData>) => Promise<Client>;
-  remove: (id: number) => Promise<void>;
-  clearCurrent: () => void;
+  pagination: Pagination;
+  fetchClients: (params?: ClientQueryParams) => Promise<void>;
+  createClient: (data: CreateClientDto) => Promise<Client>;
+  updateClient: (id: number, data: UpdateClientDto) => Promise<Client>;
+  deleteClient: (id: number) => Promise<void>;
 }
 
-export const useClientStore = create<ClientState>((set, get) => ({
+export const useClientStore = create<ClientState>((set) => ({
   clients: [],
-  total: 0,
   loading: false,
-  error: null,
-  current: null,
+  pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 },
 
-  fetchClients: async (params) => {
-    set({ loading: true, error: null });
+  fetchClients: async (params = { page: 1, pageSize: 10 }) => {
+    set({ loading: true });
     try {
-      const res = await clientService.list(params);
-      set({ clients: res.data.items, total: res.data.total, loading: false });
-    } catch (e: any) {
-      set({ error: e.response?.data?.error?.message || '加载客户列表失败', loading: false });
+      const result = await clientService.list(params);
+      set({
+        clients: result.data,
+        pagination: result.pagination,
+        loading: false,
+      });
+    } finally {
+      set({ loading: false });
     }
   },
 
-  fetchById: async (id) => {
-    set({ loading: true, error: null });
-    try {
-      const res = await clientService.getById(id);
-      set({ current: res.data, loading: false });
-    } catch (e: any) {
-      set({ error: e.response?.data?.error?.message || '加载客户详情失败', loading: false });
-    }
+  createClient: async (data) => {
+    const client = await clientService.create(data);
+    set((state) => ({ clients: [client, ...state.clients] }));
+    return client;
   },
 
-  create: async (data) => {
-    const res = await clientService.create(data);
-    get().fetchClients({ page: 1, pageSize: 20 });
-    return res.data;
+  updateClient: async (id, data) => {
+    const client = await clientService.update(id, data);
+    set((state) => ({
+      clients: state.clients.map((c) => (c.id === id ? client : c)),
+    }));
+    return client;
   },
 
-  update: async (id, data) => {
-    const res = await clientService.update(id, data);
-    set({ current: res.data });
-    get().fetchClients({ page: 1, pageSize: 20 });
-    return res.data;
-  },
-
-  remove: async (id) => {
+  deleteClient: async (id) => {
     await clientService.remove(id);
-    set({ current: null });
-    get().fetchClients({ page: 1, pageSize: 20 });
+    set((state) => ({
+      clients: state.clients.filter((c) => c.id !== id),
+    }));
   },
-
-  clearCurrent: () => set({ current: null }),
 }));

@@ -1,17 +1,17 @@
 import React, { useEffect } from 'react';
-import { Row, Col, Card, Statistic, Table, List, Tag, Typography, Spin } from 'antd';
+import { Row, Col, Card, Statistic, List, Tag, Typography, Space } from 'antd';
 import {
   TeamOutlined, FolderOpenOutlined, CheckSquareOutlined,
-  ClockCircleOutlined, DollarOutlined, ArrowUpOutlined,
+  ClockCircleOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useClientStore } from '../stores/clientStore';
 import { useMatterStore } from '../stores/matterStore';
 import { useTaskStore } from '../stores/taskStore';
 import { useTimeEntryStore } from '../stores/timeEntryStore';
-import { Matter, Task } from '../types/api';
+import { Matter, Task, Priority } from '../types/api';
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 const matterStatusColors: Record<string, string> = {
   PENDING: 'default', IN_PROGRESS: 'processing', COMPLETED: 'success', CANCELLED: 'error',
@@ -19,14 +19,14 @@ const matterStatusColors: Record<string, string> = {
 const matterStatusLabels: Record<string, string> = {
   PENDING: '待处理', IN_PROGRESS: '进行中', COMPLETED: '已完成', CANCELLED: '已取消',
 };
-const priorityColors: Record<string, string> = { HIGH: 'red', MEDIUM: 'orange', LOW: 'blue' };
-const priorityLabels: Record<string, string> = { HIGH: '高', MEDIUM: '中', LOW: '低' };
+const priorityColors: Record<Priority, string> = { HIGH: 'red', MEDIUM: 'orange', LOW: 'blue' };
+const priorityLabels: Record<Priority, string> = { HIGH: '高', MEDIUM: '中', LOW: '低' };
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const { clients, fetchClients, loading: clientsLoading } = useClientStore();
-  const { matters, fetchMatters, loading: mattersLoading } = useMatterStore();
-  const { tasks, fetchTasks, loading: tasksLoading } = useTaskStore();
+  const { clients, fetchClients } = useClientStore();
+  const { matters, fetchMatters } = useMatterStore();
+  const { tasks, fetchTasks } = useTaskStore();
   const { entries, fetchEntries, running, elapsed, fetchRunning } = useTimeEntryStore();
 
   useEffect(() => {
@@ -40,7 +40,6 @@ const DashboardPage: React.FC = () => {
   const activeMatters = matters.filter((m) => m.status === 'IN_PROGRESS' || m.status === 'PENDING');
   const pendingTasks = tasks.filter((t) => t.status === 'TODO');
   const todayTime = entries.reduce((s, e) => s + (e.duration || 0), 0);
-  const todayBilling = entries.reduce((s, e) => s + (e.amount || 0), 0);
   const formatDuration = (min: number) => {
     if (min < 60) return `${min}分`;
     return `${(min / 60).toFixed(1)}时`;
@@ -78,7 +77,6 @@ const DashboardPage: React.FC = () => {
         </Col>
       </Row>
 
-      {/* Timer Bar */}
       {running && (
         <Card style={{ marginTop: 16, background: '#e6f7ff', border: '1px solid #91d5ff' }}>
           <Row align="middle" justify="space-between">
@@ -99,17 +97,12 @@ const DashboardPage: React.FC = () => {
       )}
 
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-        {/* 进行中的业务 */}
         <Col xs={24} lg={12}>
           <Card title="进行中的业务" extra={<a onClick={() => navigate('/matters')}>查看全部</a>}>
             <List
-              loading={mattersLoading}
               dataSource={activeMatters.slice(0, 5)}
               renderItem={(item: Matter) => (
-                <List.Item
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => navigate(`/matters/${item.id}`)}
-                >
+                <List.Item style={{ cursor: 'pointer' }} onClick={() => navigate(`/matters/${item.id}`)}>
                   <List.Item.Meta
                     title={<Text strong>{item.matterNo} — {item.title}</Text>}
                     description={`${item.client?.name || ''} · ${item.deadline ? '截止 ' + new Date(item.deadline).toLocaleDateString() : '无截止日'}`}
@@ -125,11 +118,9 @@ const DashboardPage: React.FC = () => {
           </Card>
         </Col>
 
-        {/* 待办任务 */}
         <Col xs={24} lg={12}>
           <Card title="待办任务" extra={<a onClick={() => navigate('/tasks')}>查看全部</a>}>
             <List
-              loading={tasksLoading}
               dataSource={pendingTasks.slice(0, 5)}
               renderItem={(item: Task) => (
                 <List.Item style={{ cursor: 'pointer' }}>
