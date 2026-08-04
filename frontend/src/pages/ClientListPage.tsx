@@ -14,16 +14,16 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 
 const typeLabels: Record<ClientType, string> = {
-  PERSONAL: '个人', COMPANY: '企业' as any, ENTERPRISE: '企业' as any,
-} as any;
+  PERSONAL: '个人', ENTERPRISE: '企业',
+};
 const typeColors: Record<string, string> = {
-  PERSONAL: 'blue', ENTERPRISE: 'purple', COMPANY: 'purple',
+  PERSONAL: 'blue', ENTERPRISE: 'purple',
 };
 const statusLabels: Record<ClientStatus, string> = {
-  ACTIVE: '活跃', INACTIVE: '停用', POTENTIAL: '潜在',
+  ACTIVE: '活跃', INACTIVE: '停用', POTENTIAL: '潜在', CLOSED: '已关闭',
 };
 const statusColors: Record<ClientStatus, string> = {
-  ACTIVE: 'green', INACTIVE: 'default', POTENTIAL: 'orange',
+  ACTIVE: 'green', INACTIVE: 'default', POTENTIAL: 'orange', CLOSED: 'red',
 };
 
 const ClientListPage: React.FC = () => {

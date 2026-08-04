@@ -80,8 +80,8 @@ export interface LoginResponse {
 // 客户 (Client)
 // =====================================================
 
-export type ClientType = 'PERSONAL' | 'COMPANY';
-export type ClientStatus = 'ACTIVE' | 'INACTIVE' | 'POTENTIAL';
+export type ClientType = 'PERSONAL' | 'ENTERPRISE';
+export type ClientStatus = 'ACTIVE' | 'INACTIVE' | 'POTENTIAL' | 'CLOSED';
 
 export interface Client {
   id: number;
@@ -180,15 +180,26 @@ export interface ClientQueryParams extends PaginationParams {
 // =====================================================
 
 export type MatterType =
-  | 'LITIGATION'
+  | 'CONSULTATION'
   | 'CONTRACT_REVIEW'
-  | 'LEGAL_ADVICE'
-  | 'CORPORATE'
-  | 'IP'
+  | 'CONTRACT_DRAFT'
+  | 'CASE_LITIGATION'
+  | 'CASE_ARBITRATION'
+  | 'CASE_MEDIATION'
+  | 'COMPLIANCE'
+  | 'TRAINING'
+  | 'DOCUMENT_DRAFT'
   | 'OTHER';
-export type MatterStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
-export type FeeType = 'FIXED' | 'HOURLY' | 'RETAINER' | 'CONTINGENCY' | 'FREE';
-export type Priority = 'HIGH' | 'MEDIUM' | 'LOW';
+export type MatterStatus =
+  | 'PENDING'
+  | 'IN_PROGRESS'
+  | 'WAITING_CLIENT'
+  | 'REVIEWING'
+  | 'COMPLETED'
+  | 'ARCHIVED'
+  | 'CANCELLED';
+export type FeeType = 'FIXED' | 'HOURLY' | 'CONTINGENCY' | 'MONTHLY' | 'FREE';
+export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
 
 export interface Matter {
   id: number;
@@ -261,7 +272,7 @@ export interface MatterQueryParams extends PaginationParams {
 // 任务 (Task)
 // =====================================================
 
-export type TaskStatus = 'TODO' | 'DONE';
+export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'DONE' | 'CANCELLED';
 
 export interface Task {
   id: number;
@@ -320,7 +331,7 @@ export interface TaskQueryParams extends PaginationParams {
 // 沟通记录 (Communication)
 // =====================================================
 
-export type CommChannel = 'PHONE' | 'EMAIL' | 'WECHAT' | 'MEETING' | 'OTHER';
+export type CommChannel = 'WECHAT' | 'EMAIL' | 'SMS' | 'PHONE' | 'MEETING' | 'VIDEO' | 'SYSTEM' | 'OTHER';
 export type Direction = 'INBOUND' | 'OUTBOUND';
 
 export interface Communication {
@@ -455,7 +466,7 @@ export interface TimeEntryQueryParams extends PaginationParams {
 // 发票 (Invoice)
 // =====================================================
 
-export type InvoiceStatus = 'DRAFT' | 'ISSUED' | 'PAID' | 'OVERDUE' | 'CANCELLED';
+export type InvoiceStatus = 'DRAFT' | 'ISSUED' | 'SENT' | 'PARTIAL' | 'PAID' | 'OVERDUE' | 'CANCELLED';
 
 export interface Invoice {
   id: number;

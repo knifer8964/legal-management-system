@@ -17,10 +17,12 @@ const { Option } = Select;
 const { TextArea } = Input;
 
 const channelLabels: Record<CommChannel, string> = {
-  PHONE: '电话', EMAIL: '邮件', WECHAT: '微信', MEETING: '会议', OTHER: '其他',
+  WECHAT: '微信', EMAIL: '邮件', SMS: '短信', PHONE: '电话',
+  MEETING: '面谈', VIDEO: '视频', SYSTEM: '系统', OTHER: '其他',
 };
 const channelColors: Record<CommChannel, string> = {
-  PHONE: 'blue', EMAIL: 'purple', WECHAT: 'green', MEETING: 'orange', OTHER: 'default',
+  WECHAT: 'green', EMAIL: 'purple', SMS: 'blue', PHONE: 'cyan',
+  MEETING: 'orange', VIDEO: 'geekblue', SYSTEM: 'default', OTHER: 'default',
 };
 const directionLabels: Record<Direction, string> = { INBOUND: ' inbound', OUTBOUND: ' outbound' };
 

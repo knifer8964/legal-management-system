@@ -3,14 +3,14 @@ import { LoginRequest, LoginResponse, User } from '../types/api';
 
 class AuthService {
   public async login(data: LoginRequest): Promise<LoginResponse> {
-    const response = await httpService.post<LoginResponse>('/auth/login', data);
-    if (response.data.success) {
-      const { token, user } = response.data.data;
+    const result = await httpService.post<{ success: boolean; message?: string; data: LoginResponse }>('/auth/login', data);
+    if (result.success) {
+      const { token, user } = result.data;
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
-      return response.data.data;
+      return result.data;
     }
-    throw new Error(response.data.message || '登录失败');
+    throw new Error(result.message || '登录失败');
   }
 
   public logout(): void {

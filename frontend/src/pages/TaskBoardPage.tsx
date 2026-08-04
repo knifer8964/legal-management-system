@@ -12,10 +12,10 @@ import dayjs from 'dayjs';
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-const statusLabels: Record<TaskStatus, string> = { TODO: '待办', DONE: '已完成' };
-const statusColors: Record<TaskStatus, string> = { TODO: 'orange', DONE: 'green' };
-const priorityColors: Record<Priority, string> = { HIGH: 'red', MEDIUM: 'orange', LOW: 'blue' };
-const priorityLabels: Record<Priority, string> = { HIGH: '高', MEDIUM: '中', LOW: '低' };
+const statusLabels: Record<TaskStatus, string> = { TODO: '待办', IN_PROGRESS: '进行中', DONE: '已完成', CANCELLED: '已取消' };
+const statusColors: Record<TaskStatus, string> = { TODO: 'orange', IN_PROGRESS: 'blue', DONE: 'green', CANCELLED: 'default' };
+const priorityColors: Record<Priority, string> = { HIGH: 'red', MEDIUM: 'orange', LOW: 'blue', URGENT: 'purple' };
+const priorityLabels: Record<Priority, string> = { HIGH: '高', MEDIUM: '中', LOW: '低', URGENT: '紧急' };
 
 const TaskBoardPage: React.FC = () => {
   const { tasks, loading, fetchTasks, createTask, updateTask, toggleTask, deleteTask } = useTaskStore();
@@ -104,7 +104,9 @@ const TaskBoardPage: React.FC = () => {
           <Col>
             <Select placeholder="状态" allowClear style={{ width: 120 }} value={statusFilter} onChange={(v) => setStatusFilter(v)}>
               <Option value="TODO">待办</Option>
+              <Option value="IN_PROGRESS">进行中</Option>
               <Option value="DONE">已完成</Option>
+              <Option value="CANCELLED">已取消</Option>
             </Select>
           </Col>
           <Col><Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>新建任务</Button></Col>
@@ -116,7 +118,7 @@ const TaskBoardPage: React.FC = () => {
       ) : (
         <Row gutter={16}>
           <Col xs={24} md={12}>
-            <Card title={`待办 (${todoTasks.length})`}>
+            <Card title={`待办/进行中 (${todoTasks.length})`}>
               {todoTasks.map(renderTaskCard)}
             </Card>
           </Col>
@@ -139,12 +141,12 @@ const TaskBoardPage: React.FC = () => {
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="priority" label="优先级" initialValue="MEDIUM">
-                <Select><Option value="HIGH">高</Option><Option value="MEDIUM">中</Option><Option value="LOW">低</Option></Select>
+                <Select><Option value="HIGH">高</Option><Option value="MEDIUM">中</Option><Option value="LOW">低</Option><Option value="URGENT">紧急</Option></Select>
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item name="status" label="状态" initialValue="TODO">
-                <Select><Option value="TODO">待办</Option><Option value="DONE">已完成</Option></Select>
+                <Select><Option value="TODO">待办</Option><Option value="IN_PROGRESS">进行中</Option><Option value="DONE">已完成</Option><Option value="CANCELLED">已取消</Option></Select>
               </Form.Item>
             </Col>
           </Row>

@@ -20,9 +20,22 @@ class HttpService {
     this.client.interceptors.response.use(
       (response) => response,
       (error) => {
-        if (error.response?.status === 401) {
+        const status = error.response?.status;
+        if (status === 401 || status === 403) {
           localStorage.removeItem('token');
+          localStorage.removeItem('user');
           window.location.href = '/login';
+          // 返回一个永远 pending 的 Promise，避免未处理的 rejection 继续抛到组件/ErrorBoundary
+          return new Promise(() => {});
+        }
+        if (status === 429) {
+          // 提示请求过于频繁，不抛到 ErrorBoundary
+          const msg = error.response?.data?.message || '请求过于频繁，请稍后再试';
+          if (typeof window !== 'undefined') {
+            // eslint-disable-next-line no-alert
+            window.alert(msg);
+          }
+          return new Promise(() => {});
         }
         return Promise.reject(error);
       }

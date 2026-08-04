@@ -14,13 +14,15 @@ import { Matter, Task, Priority } from '../types/api';
 const { Title, Text } = Typography;
 
 const matterStatusColors: Record<string, string> = {
-  PENDING: 'default', IN_PROGRESS: 'processing', COMPLETED: 'success', CANCELLED: 'error',
+  PENDING: 'default', IN_PROGRESS: 'processing', WAITING_CLIENT: 'warning',
+  REVIEWING: 'purple', COMPLETED: 'success', ARCHIVED: 'default', CANCELLED: 'error',
 };
 const matterStatusLabels: Record<string, string> = {
-  PENDING: '待处理', IN_PROGRESS: '进行中', COMPLETED: '已完成', CANCELLED: '已取消',
+  PENDING: '待处理', IN_PROGRESS: '进行中', WAITING_CLIENT: '等待客户',
+  REVIEWING: '内部复核', COMPLETED: '已完成', ARCHIVED: '已归档', CANCELLED: '已取消',
 };
-const priorityColors: Record<Priority, string> = { HIGH: 'red', MEDIUM: 'orange', LOW: 'blue' };
-const priorityLabels: Record<Priority, string> = { HIGH: '高', MEDIUM: '中', LOW: '低' };
+const priorityColors: Record<Priority, string> = { HIGH: 'red', MEDIUM: 'orange', LOW: 'blue', URGENT: 'purple' };
+const priorityLabels: Record<Priority, string> = { HIGH: '高', MEDIUM: '中', LOW: '低', URGENT: '紧急' };
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();

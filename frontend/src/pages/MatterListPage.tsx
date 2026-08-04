@@ -18,19 +18,22 @@ const { Option } = Select;
 const { RangePicker } = DatePicker;
 
 const typeLabels: Record<MatterType, string> = {
-  LITIGATION: '诉讼', CONTRACT_REVIEW: '合同审查', LEGAL_ADVICE: '法律咨询',
-  CORPORATE: '公司法务', IP: '知识产权', OTHER: '其他',
+  CONSULTATION: '法律咨询', CONTRACT_REVIEW: '合同审查', CONTRACT_DRAFT: '合同起草',
+  CASE_LITIGATION: '诉讼案件', CASE_ARBITRATION: '仲裁案件', CASE_MEDIATION: '调解案件',
+  COMPLIANCE: '合规顾问', TRAINING: '法律培训', DOCUMENT_DRAFT: '文书代写', OTHER: '其他',
 };
 const statusColors: Record<MatterStatus, string> = {
-  PENDING: 'default', IN_PROGRESS: 'processing', COMPLETED: 'success', CANCELLED: 'error',
+  PENDING: 'default', IN_PROGRESS: 'processing', WAITING_CLIENT: 'warning',
+  REVIEWING: 'purple', COMPLETED: 'success', ARCHIVED: 'default', CANCELLED: 'error',
 };
 const statusLabels: Record<MatterStatus, string> = {
-  PENDING: '待处理', IN_PROGRESS: '进行中', COMPLETED: '已完成', CANCELLED: '已取消',
+  PENDING: '待处理', IN_PROGRESS: '进行中', WAITING_CLIENT: '等待客户',
+  REVIEWING: '内部复核', COMPLETED: '已完成', ARCHIVED: '已归档', CANCELLED: '已取消',
 };
-const priorityColors: Record<Priority, string> = { HIGH: 'red', MEDIUM: 'orange', LOW: 'blue' };
-const priorityLabels: Record<Priority, string> = { HIGH: '高', MEDIUM: '中', LOW: '低' };
+const priorityColors: Record<Priority, string> = { HIGH: 'red', MEDIUM: 'orange', LOW: 'blue', URGENT: 'purple' };
+const priorityLabels: Record<Priority, string> = { HIGH: '高', MEDIUM: '中', LOW: '低', URGENT: '紧急' };
 const feeLabels: Record<FeeType, string> = {
-  FIXED: '固定费用', HOURLY: '计时收费', RETAINER: '常年顾问', CONTINGENCY: '风险代理', FREE: '无偿',
+  FIXED: '固定费用', HOURLY: '计时收费', CONTINGENCY: '风险代理', MONTHLY: '月度顾问', FREE: '无偿',
 };
 
 const MatterListPage: React.FC = () => {
@@ -139,7 +142,10 @@ const MatterListPage: React.FC = () => {
             <Select placeholder="状态" allowClear style={{ width: 120 }} value={statusFilter} onChange={(v) => setStatusFilter(v)}>
               <Option value="PENDING">待处理</Option>
               <Option value="IN_PROGRESS">进行中</Option>
+              <Option value="WAITING_CLIENT">等待客户</Option>
+              <Option value="REVIEWING">内部复核</Option>
               <Option value="COMPLETED">已完成</Option>
+              <Option value="ARCHIVED">已归档</Option>
               <Option value="CANCELLED">已取消</Option>
             </Select>
           </Col>
@@ -187,6 +193,7 @@ const MatterListPage: React.FC = () => {
                   <Option value="HIGH">高</Option>
                   <Option value="MEDIUM">中</Option>
                   <Option value="LOW">低</Option>
+                  <Option value="URGENT">紧急</Option>
                 </Select>
               </Form.Item>
             </Col>
@@ -195,7 +202,10 @@ const MatterListPage: React.FC = () => {
                 <Select>
                   <Option value="PENDING">待处理</Option>
                   <Option value="IN_PROGRESS">进行中</Option>
+                  <Option value="WAITING_CLIENT">等待客户</Option>
+                  <Option value="REVIEWING">内部复核</Option>
                   <Option value="COMPLETED">已完成</Option>
+                  <Option value="ARCHIVED">已归档</Option>
                   <Option value="CANCELLED">已取消</Option>
                 </Select>
               </Form.Item>
