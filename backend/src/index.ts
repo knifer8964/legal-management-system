@@ -67,13 +67,21 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(requestTracker);
 app.use(requestLogger);
 
-// 限流中间件（开发环境放宽）
+// 登录接口严格限流（防暴力破解）
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 分钟窗口
+  max: 10, // 每个 IP 每 15 分钟最多 10 次登录尝试
+  message: { success: false, error: { code: 'TOO_MANY_REQUESTS', message: '登录尝试过于频繁，请 15 分钟后再试' } },
+  skipSuccessfulRequests: true, // 成功的请求不计数
+});
+
+// 通用限流（开发环境放宽）
 const limiter = rateLimit({
   windowMs: 60 * 1000, // 1 分钟窗口
   max: 600, // 每个 IP 每分钟 600 次请求
   message: '请求过于频繁，请稍后再试',
-  skip: (req) => req.path === '/api/v1/auth/login' || req.path === '/api/v1/auth/register',
 });
+app.use('/api/v1/auth/login', loginLimiter);
 app.use('/api/', limiter);
 
 // 健康检查

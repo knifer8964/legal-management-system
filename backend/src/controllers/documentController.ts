@@ -14,6 +14,11 @@ export class DocumentController {
       if (!fileName || !filePath) {
         return Errors.badRequest(res, 'fileName 和 filePath 为必填');
       }
+      // 安全: 防止路径遍历攻击
+      const normalizedPath = filePath.replace(/\\/g, '/');
+      if (normalizedPath.includes('..') || normalizedPath.includes('//')) {
+        return Errors.badRequest(res, '文件路径包含非法字符');
+      }
       const userId = req.user?.userId || 0;
       return success(res, await documentService.create(req.body, userId), '文档创建成功', 201);
     } catch (err: any) {

@@ -38,10 +38,10 @@ export class InvoiceService {
   async create(data: CreateInvoiceDto, userId: number): Promise<Invoice> {
     const invoiceNo = await generateInvoiceNo();
 
-    // 计算金额
-    const subtotal = Number(data.subtotal) || 0;
-    const taxRate = Number(data.taxRate) || 0;
-    const discount = Number(data.discount) || 0;
+    // 计算金额（安全: 确保非负数）
+    const subtotal = Math.max(0, Number(data.subtotal) || 0);
+    const taxRate = Math.min(100, Math.max(0, Number(data.taxRate) || 0));
+    const discount = Math.max(0, Number(data.discount) || 0);
     const taxAmount = Math.round(subtotal * taxRate) / 100;
     const totalAmount = Math.round((subtotal + taxAmount - discount) * 100) / 100;
 

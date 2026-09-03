@@ -42,7 +42,7 @@ router.post('/logout', authenticateToken, (_req: Request, res: Response) => {
 router.post('/refresh', authenticateToken, async (req: Request, res: Response) => {
   const user = req.user!;
   const jwt = await import('jsonwebtoken');
-  const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+  const JWT_SECRET = process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET 环境变量未设置'); })();
 
   const newToken = jwt.sign(
     { userId: user.userId, username: user.username, role: user.role },

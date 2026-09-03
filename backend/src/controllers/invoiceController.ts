@@ -11,9 +11,16 @@ export class InvoiceController {
   // 创建发票
   async create(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
-      const { clientId, subtotal } = req.body;
+      const { clientId, subtotal, taxRate } = req.body;
       if (!clientId || subtotal === undefined) {
         return Errors.badRequest(res, '客户ID和小计金额为必填');
+      }
+      // 安全: 金额必须为非负数
+      if (typeof subtotal === 'number' && subtotal < 0) {
+        return Errors.badRequest(res, '小计金额不能为负数');
+      }
+      if (taxRate !== undefined && (typeof taxRate !== 'number' || taxRate < 0 || taxRate > 100)) {
+        return Errors.badRequest(res, '税率必须在 0-100 之间');
       }
       return success(res, await invoiceService.create(req.body, req.user!.userId), '发票创建成功', 201);
     } catch (err: any) { return next(err); }

@@ -1,13 +1,20 @@
-docs: M9文档管理前端页面完成（DocumentListPage + service + store，编译零错误）
+安全修复: M7/M8/M9 安全审计整改
 
-新增文件:
-- frontend/src/services/documentService.ts — 文档API调用封装(6接口)
-- frontend/src/stores/documentStore.ts — Zustand store
-- frontend/src/pages/DocumentListPage.tsx — 文档管理页面(统计卡片+表格+创建/编辑弹窗+Popconfirm删除)
+1. [严重] 移除 JWT 硬编码 fallback ('your-secret-key')
+   - authMiddleware.ts / authController.ts / authRoutes.ts
+   - 启动时强制要求 JWT_SECRET 环境变量
+   - 更新 .env 使用高强度随机密钥
 
-修改:
-- frontend/src/types/api.ts — 补充Document相关类型
-- frontend/src/App.tsx — 注册 /documents 路由
-- frontend/src/layouts/AppLayout.tsx — 添加「文档管理」菜单项
+2. [严重] 登录接口暴力破解防护
+   - 新增 loginLimiter: 15分钟窗口最多10次尝试
+   - 修复原 limiter skip 路径不匹配问题
+   - skipSuccessfulRequests: 成功登录不计数
 
-虚拟团队协作: dev-cypher前端开发
+3. [安全] 发票金额负数校验
+   - invoiceController.create: subtotal/taxRate 范围校验
+   - invoiceService.create: Math.max(0,...) 双重防护
+
+4. [安全] 文档路径遍历防护
+   - documentController.create: 拒绝包含 .. 和 // 的 filePath
+
+5. [一致性] InvoiceListPage 删除操作补 Popconfirm 二次确认

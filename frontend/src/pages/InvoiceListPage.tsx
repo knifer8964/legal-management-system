@@ -6,6 +6,7 @@ import {
 import {
   PlusOutlined, DeleteOutlined, DollarOutlined, EditOutlined,
 } from '@ant-design/icons';
+import { Popconfirm } from 'antd';
 import { useInvoiceStore } from '../stores/invoiceStore';
 import { useClientStore } from '../stores/clientStore';
 import { useMatterStore } from '../stores/matterStore';
@@ -154,8 +155,16 @@ const InvoiceListPage: React.FC = () => {
             disabled={r.status === 'PAID' || r.status === 'CANCELLED'}
             onClick={() => openPay(r)}>付款</Button>
           <Button size="small" type="link" icon={<EditOutlined />} onClick={() => openEdit(r)} />
-          <Button size="small" type="link" danger icon={<DeleteOutlined />}
-            onClick={() => { deleteInvoice(r.id); message.success('已删除'); }} />
+          <Popconfirm
+            title="确认删除"
+            description="确定要删除这张发票吗？"
+            onConfirm={() => { deleteInvoice(r.id); message.success('已删除'); }}
+            okText="删除"
+            cancelText="取消"
+            okButtonProps={{ danger: true }}
+          >
+            <Button size="small" type="link" danger icon={<DeleteOutlined />} />
+          </Popconfirm>
         </Space>
       ),
     },

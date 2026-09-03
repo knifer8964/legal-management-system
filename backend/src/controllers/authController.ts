@@ -10,7 +10,7 @@ import { logger } from '../index';
 import { success, created, Errors } from '../utils/responseUtil';
 
 const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET 环境变量未设置，拒绝启动'); })();
 
 // 将权限对象转换为权限代码数组
 function extractPermissionCodes(permissions: any): string[] {
