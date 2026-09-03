@@ -1,23 +1,8 @@
-M10: Dashboard 增强 — 聚合统计接口 + 图表可视化
+需求对标修复: 修复乱码/路由缺口/清理遗留文件/更新README
 
-后端新增:
-- services/dashboardService.ts: 聚合统计（客户/业务/任务/计时/发票/文档）
-- controllers/dashboardController.ts: GET /dashboard/summary
-- routes/dashboardRoutes.ts: authenticateToken 守卫
-- routes/index.ts: 注册 /dashboard 路由
-- 一次性返回全部统计数据，避免前端发 7 个请求
-
-前端重构:
-- services/dashboardService.ts: 类型化 DashboardSummary 接口
-- pages/DashboardPage.tsx: 完全重写
-  - 8 个统计卡片（客户/业务/待办/未收金额/计时/文档/收款率）
-  - 3 个图表（业务状态饼图/任务状态柱状图/发票金额柱状图）via recharts
-  - 逾期任务列表 + 近期业务列表 + 7天内截止业务
-  - 收款率 Progress 进度条
-- 安装 recharts 依赖
-
-测试:
-- 后端 tsc --noEmit: 零错误
-- 前端 tsc --noEmit: 零错误
-- M10 冒烟测试: /dashboard/summary 200 + 数据正确 + 无 token 401
-- 全量回归 26/26 通过
+- 修复 InvoiceListPage.tsx 19处中文乱码(U+FFFD替换字符)
+- 新增 ProfilePage.tsx 并注册 /profile 路由
+- 清理 8 个 .ts.disabled 遗留文件(早期SaaS版合同/AI Agent/知识库)
+- 重写 README.md 从早期SaaS定位更新为个人法务工作室管理系统
+- 新增 scripts/fix-invoice-encoding.js 修复工具
+- 新增需求对标复核报告(rvw-rigel产出)

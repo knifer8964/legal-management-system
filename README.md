@@ -1,184 +1,156 @@
-# 公司法务智慧管理系统
+# 个人法务工作室管理系统 (Legal Management System)
 
 ## 项目概述
 
-面向企业内部法务部门的**全栈智慧管理平台**，支持合同管理、案件追踪、AI Agent 协作、在线接单等核心功能。
+面向独立执业律师、法务顾问、自由法务工作者的**一人公司运营工具**。帮助法务高效管理个人+企业客户、业务事项、沟通记录、计时收费、发票、文档等全部业务流程。
+
+**不是 SaaS 平台，而是个人工具**——类比"美团商家版"而非"美团"。
 
 ## 技术栈
 
 ### 后端
 - **运行时**: Node.js 20+
-- **框架**: Express 4.x + TypeScript 5.x
-- **ORM**: Prisma 5.7+ (MySQL)
-- **缓存**: Redis (ioredis)
-- **认证**: JWT (jsonwebtoken)
+- **框架**: Express 4 + TypeScript 5
+- **ORM**: Prisma 5.22 (MySQL 8.4)
+- **缓存**: Redis (ioredis，可选，降级为内存)
+- **认证**: JWT + bcrypt
 
 ### 前端
-- **框架**: React 18 + TypeScript 5.x
-- **构建工具**: Vite 5.x
-- **UI 组件库**: Ant Design 5.x (Pro Components)
+- **框架**: React 19 + TypeScript
+- **构建**: Vite 8 (rolldown)
+- **UI**: Ant Design 5
 - **状态管理**: Zustand
-- **路由**: React Router DOM v6
-- **HTTP 客户端**: Axios
+- **路由**: React Router 6
 - **图表**: Recharts
 
-## 项目结构
-
-```
-legal-management-system/
-├── backend/                 # 后端服务
-│   ├── prisma/             # 数据库 Schema 和迁移
-│   │   └── schema.prisma   # 数据模型定义
-│   ├── src/
-│   │   ├── index.ts        # Express 入口文件
-│   │   ├── controllers/    # 控制器层
-│   │   │   ├── authController.ts      # 认证控制器
-│   │   │   └── contractController.ts  # 合同控制器
-│   │   ├── routes/         # 路由定义
-│   │   │   ├── index.ts    # 主路由入口
-│   │   │   ├── authRoutes.ts       # 认证路由
-│   │   │   └── contractRoutes.ts   # 合同路由
-│   │   └── middleware/     # 中间件
-│   │       └── authMiddleware.ts   # 认证中间件
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── .env.template       # 环境变量模板
-├── frontend/               # 前端应用
-│   ├── src/
-│   │   ├── main.tsx        # 应用入口
-│   │   ├── App.tsx          # 根组件
-│   │   ├── types/           # TypeScript 类型定义
-│   │   │   └── index.ts
-│   │   ├── utils/           # 工具函数
-│   │   │   └── api.ts       # API 配置
-│   │   └── styles/          # 全局样式
-│   │       └── global.css
-│   ├── package.json
-│   ├── tsconfig.json
-│   ├── vite.config.ts
-│   └── index.html
-├── docs/                   # 项目文档
-├── scripts/                # 脚本工具
-└── deploy/                 # 部署配置
-```
+### 桌面端
+- **Electron**: 打包为桌面应用，本地启动后端服务
 
 ## 核心功能模块
 
-### 1. 用户与权限管理 (RBAC)
-- 用户注册/登录/修改密码
-- JWT Token 认证与刷新
-- 角色权限管理（管理员、法务专员、普通用户）
-- 权限中间件动态检查
+| 模块 | 状态 | 说明 |
+|------|------|------|
+| 客户管理 | ✅ | 个人/企业客户档案、关联业务、统计 |
+| 业务事项 | ✅ | 10 类事项（诉讼/仲裁/调解/咨询/合规/合同审查/合同起草/培训/文书代写/其他）|
+| 沟通记录 | ✅ | 8 渠道沟通记录、双向标记、关联客户/业务 |
+| 任务管理 | ✅ | 任务 CRUD、优先级、截止日期、看板视图 |
+| 计时收费 | ✅ | 开始/停止计时、费率、可计费标记、发票关联 |
+| 发票管理 | ✅ | 自动编号、金额计算、付款记录、状态流转 |
+| 文档管理 | ✅ | 文档元数据、分类、关联客户/业务 |
+| 用户管理 | ✅ | 用户 CRUD、RBAC 权限、角色管理 |
+| Dashboard | ✅ | 聚合统计、图表可视化、逾期提醒 |
+| 虚拟法务部 | 📋 预留 | EnterpriseConfig 数据模型已就位，API/前端待开发 |
+| OA/ERP 对接 | 📋 预留 | 预留字段已就位，接口待开发 |
 
-### 2. 合同管理 (核心模块)
-- 合同 CRUD 操作
-- 全生命周期状态管理（草稿→审核→签署→执行→完成/终止）
-- 多级审批流程
-- 合同风险检查（预留 AI 接口）
+## API 接口 (61+)
 
-### 3. 案件管理
-- 案件创建与分配
-- 时间线记录
-- 状态跟踪（待处理→审理→上诉→执行→结案）
-
-### 4. AI Agent 管理
-- 支持接入人类专家、AI Agent、外部专家
-- 任务分配与协作
-- 能力配置与状态监控
-
-### 5. 服务产品与订单
-- 服务产品发布与管理
-- 在线订单接收与处理
-- 支付状态跟踪
+| 路由 | 接口数 | 说明 |
+|------|--------|------|
+| /api/v1/auth | 5 | 登录/登出/刷新/个人信息/改密 |
+| /api/v1/clients | 7 | 客户 CRUD + 统计 + 关联业务 |
+| /api/v1/matters | 9 | 业务 CRUD + 编号查询 + 统计 + 时间线 + 状态更新 |
+| /api/v1/tasks | 7 | 任务 CRUD + 统计 + 切换状态 |
+| /api/v1/communications | 6 | 沟通记录 CRUD + 统计 |
+| /api/v1/time-entries | 9 | 计时 CRUD + 统计 + 开始/停止/手动录入 |
+| /api/v1/users | 8 | 用户 CRUD + 角色列表 + 重置密码 |
+| /api/v1/invoices | 8 | 发票 CRUD + 统计 + 关联计时 + 付款记录 |
+| /api/v1/documents | 6 | 文档 CRUD + 统计 |
+| /api/v1/dashboard | 1 | 聚合统计概览 |
 
 ## 快速开始
 
 ### 环境要求
-- Node.js >= 20.0.0
+- Node.js >= 20
 - MySQL >= 8.0
-- Redis >= 7.0
-- npm 或 pnpm
+- Redis (可选)
 
-### 安装步骤
-
-#### 1. 克隆项目
+### 安装
 ```bash
-cd legal-management-system
-```
-
-#### 2. 后端安装
-```bash
+# 后端
 cd backend
 npm install
-cp .env.template .env
-# 编辑 .env 文件，配置数据库连接信息
-npx prisma migrate dev --name init
+cp .env.template .env  # 编辑数据库配置
+npx prisma migrate dev
+npx prisma db seed
 npm run dev
-```
 
-#### 3. 前端安装
-```bash
+# 前端
 cd frontend
 npm install
 npm run dev
 ```
 
-#### 4. 访问系统
-- 前端地址: http://localhost:5173
+### 默认账号
+| 用户名 | 密码 | 角色 |
+|--------|------|------|
+| admin | 123456 | 管理员 |
+| lawyer1 | 123456 | 法务 |
+| assistant1 | 123456 | 助理 |
+
+### 访问地址
+- 前端: http://localhost:5173
 - 后端 API: http://localhost:3000/api/v1
 
-## 开发规范
+### 桌面端
+```bash
+cd frontend
+npm run dev:electron   # 开发模式
+npm run build:win      # Windows 打包
+```
 
-### 命名约定
-- 文件名: camelCase (如 `authController.ts`)
-- 类名: PascalCase (如 `AuthService`)
-- 变量/函数: camelCase (如 `getUserById`)
-- 常量: UPPER_SNAKE_CASE (如 `JWT_SECRET`)
-- 数据库表名: snake_case (如 `contract_approvals`)
-- API 路由: kebab-case (如 `/contract-approvals`)
-
-### 注释规范
-- 函数注释使用 JSDoc 格式
-- 复杂逻辑添加行内注释
-- TODO 标记未完成的功能
-
-### Git 提交规范
-- feat: 新功能
-- fix: Bug 修复
-- docs: 文档更新
-- style: 代码格式调整
-- refactor: 重构
-- test: 测试相关
-- chore: 构建/工具变更
+## 项目结构
+```
+legal-management-system/
+├── backend/
+│   ├── prisma/schema.prisma    # 13 模型 + 11 枚举
+│   ├── src/
+│   │   ├── controllers/        # 10 控制器
+│   │   ├── services/           # 10 服务层
+│   │   ├── routes/             # 11 路由模块
+│   │   ├── middleware/         # 认证 + 权限 + 限流
+│   │   └── utils/              # 工具函数
+│   └── .env
+├── frontend/
+│   ├── electron/               # Electron 主进程
+│   ├── src/
+│   │   ├── pages/              # 11 页面
+│   │   ├── stores/             # 9 Zustand store
+│   │   ├── services/           # 10 API service
+│   │   ├── types/api.ts        # 类型定义
+│   │   └── layouts/AppLayout.tsx
+│   └── package.json
+├── scripts/                    # 测试与工具脚本
+└── docs/                       # 文档
+```
 
 ## 开发路线图
 
-### Phase 1: 框架搭建 ✅ (当前阶段)
-- [x] 项目目录结构初始化
-- [x] 后端框架搭建 (Express + TypeScript + Prisma)
-- [x] 前端框架搭建 (React + Vite + Ant Design)
-- [x] 数据库模型设计
-- [x] 认证系统基础实现
-- [ ] 合同管理模块完整实现
-- [ ] 前端页面开发
+### 已完成 (M1-M10)
+- ✅ M1: 数据库 Schema 重构
+- ✅ M2: 客户管理 API
+- ✅ M3: 业务事项 API
+- ✅ M4: 任务管理 API
+- ✅ M5: 沟通记录 & 计时收费
+- ✅ M6: 前端 6 核心页面
+- ✅ M7: 用户管理与权限
+- ✅ M8: 发票管理
+- ✅ M9: 文档管理
+- ✅ M10: Dashboard 增强（聚合接口+图表）
+- ✅ 安全审计 + Code Review 整改
 
-### Phase 2: 核心功能开发
-- [ ] 合同管理完整功能
-- [ ] 案件管理模块
-- [ ] AI Agent 集成
-- [ ] 任务调度系统
-
-### Phase 3: 业务扩展
-- [ ] 服务产品与订单系统
-- [ ] 在线推广页面
-- [ ] 数据分析报表
-- [ ] 知识库集成
-
-### Phase 4: 优化与部署
-- [ ] 性能优化
-- [ ] 安全加固
-- [ ] 一键部署脚本
-- [ ] 用户文档编写
+### 计划中
+- 📋 M11: 文件上传（物理上传/下载端点）
+- 📋 M12: 详情页（客户/业务详情含关联标签页）
+- 📋 M13: 搜索 & 筛选增强
+- 📋 M14: 导出（PDF/Excel）
+- 📋 M15: 通知系统
+- 📋 M16: 报表 & 分析
+- 📋 M17: 事务 + 并发安全
+- 📋 M18: Electron 桌面端完善
+- 📋 M19: 邮件集成
+- 📋 M20: 微信/企业IM 集成
+- 📋 虚拟法务部（企业客户专属工作空间）
+- 📋 OA/ERP 对接
 
 ## 许可证
 

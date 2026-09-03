@@ -17,12 +17,12 @@ const { Option } = Select;
 
 const STATUS_CONFIG: Record<InvoiceStatus, { color: string; label: string }> = {
   DRAFT: { color: 'default', label: '草稿' },
-  ISSUED: { color: 'blue', label: '已开�? },
-  SENT: { color: 'cyan', label: '已发�? },
+  ISSUED: { color: 'blue', label: '已开具 },
+  SENT: { color: 'cyan', label: '已发送 },
   PARTIAL: { color: 'orange', label: '部分支付' },
-  PAID: { color: 'green', label: '已支�? },
+  PAID: { color: 'green', label: '已支付 },
   OVERDUE: { color: 'red', label: '逾期' },
-  CANCELLED: { color: 'default', label: '已取�? },
+  CANCELLED: { color: 'default', label: '已取消 },
 };
 
 const InvoiceListPage: React.FC = () => {
@@ -130,7 +130,7 @@ const InvoiceListPage: React.FC = () => {
   };
 
   const columns = [
-    { title: '发票�?, dataIndex: 'invoiceNo', render: (v: string) => <Text strong>{v}</Text> },
+    { title: '发票号, dataIndex: 'invoiceNo', render: (v: string) => <Text strong>{v}</Text> },
     { title: '客户', dataIndex: ['client', 'name'], render: (_: any, r: Invoice) => r.client?.name || '-' },
     { title: '业务', dataIndex: ['matter', 'title'], render: (_: any, r: Invoice) => r.matter?.title || '-' },
     { title: '小计', dataIndex: 'subtotal', render: (v: number) => `¥${v.toFixed(2)}` },
@@ -138,14 +138,14 @@ const InvoiceListPage: React.FC = () => {
     { title: '总额', dataIndex: 'totalAmount', render: (v: number) => <Text strong>¥{v.toFixed(2)}</Text> },
     { title: '已付', dataIndex: 'paidAmount', render: (v: number) => v > 0 ? <Text type="success">¥{v.toFixed(2)}</Text> : '-' },
     {
-      title: '状�?, dataIndex: 'status',
+      title: '状态, dataIndex: 'status',
       render: (v: InvoiceStatus) => {
         const cfg = STATUS_CONFIG[v] || { color: 'default', label: v };
         return <Tag color={cfg.color}>{cfg.label}</Tag>;
       },
     },
-    { title: '开具日�?, dataIndex: 'issueDate', render: (v: string | null) => v ? dayjs(v).format('YYYY-MM-DD') : '-' },
-    { title: '到期�?, dataIndex: 'dueDate', render: (v: string | null) => v ? dayjs(v).format('YYYY-MM-DD') : '-' },
+    { title: '开具日期, dataIndex: 'issueDate', render: (v: string | null) => v ? dayjs(v).format('YYYY-MM-DD') : '-' },
+    { title: '到期日期, dataIndex: 'dueDate', render: (v: string | null) => v ? dayjs(v).format('YYYY-MM-DD') : '-' },
     {
       title: '操作', key: 'action', width: 180,
       render: (_: any, r: Invoice) => (
@@ -156,8 +156,8 @@ const InvoiceListPage: React.FC = () => {
           <Button size="small" type="link" icon={<EditOutlined />} onClick={() => openEdit(r)} />
           <Popconfirm
             title="确认删除"
-            description="确定要删除这张发票吗�?
-            onConfirm={async () => { try { await deleteInvoice(r.id); message.success('已删�?); } catch (e: any) { message.error(e?.response?.data?.error?.message || '删除失败'); } }}
+            description="确定要删除这张发票吗？
+            onConfirm={async () => { try { await deleteInvoice(r.id); message.success('已删除); } catch (e: any) { message.error(e?.response?.data?.error?.message || '删除失败'); } }}
             okText="删除"
             cancelText="取消"
             okButtonProps={{ danger: true }}
@@ -175,13 +175,13 @@ const InvoiceListPage: React.FC = () => {
 
       {/* 统计卡片 */}
       <Row gutter={16} style={{ marginBottom: 16 }}>
-        <Col xs={12} md={6}><Statistic title="发票�? value={invoices.length} /></Col>
-        <Col xs={12} md={6}><Statistic title="总金�? value={`¥${totalAmount.toFixed(2)}`} /></Col>
+        <Col xs={12} md={6}><Statistic title="发票号 value={invoices.length} /></Col>
+        <Col xs={12} md={6}><Statistic title="总金额" value={`¥${totalAmount.toFixed(2)}`} /></Col>
         <Col xs={12} md={6}><Statistic title="已收" value={`¥${totalPaid.toFixed(2)}`} valueStyle={{ color: '#3f8600' }} /></Col>
         <Col xs={12} md={6}><Statistic title="未收" value={`¥${totalUnpaid.toFixed(2)}`} valueStyle={{ color: '#cf1322' }} /></Col>
       </Row>
 
-      {/* 操作�?*/}
+      {/* 操作区*/}
       <div style={{ marginBottom: 16 }}>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>新建发票</Button>
       </div>
@@ -222,7 +222,7 @@ const InvoiceListPage: React.FC = () => {
           </Form.Item>
           <Row gutter={16}>
             <Col span={8}>
-              <Form.Item name="subtotal" label="小计金额" rules={[{ required: true, message: '请输入金�? }]}>
+              <Form.Item name="subtotal" label="小计金额" rules={[{ required: true, message: '请输入金额 }]}>
                 <InputNumber min={0} precision={2} style={{ width: '100%' }} prefix="¥" />
               </Form.Item>
             </Col>
@@ -239,7 +239,7 @@ const InvoiceListPage: React.FC = () => {
           </Row>
           <Row gutter={16}>
             <Col span={8}>
-              <Form.Item name="status" label="状�? initialValue="DRAFT">
+              <Form.Item name="status" label="状态 initialValue="DRAFT">
                 <Select>
                   {Object.entries(STATUS_CONFIG).map(([k, v]) => (
                     <Option key={k} value={k}>{v.label}</Option>
@@ -248,7 +248,7 @@ const InvoiceListPage: React.FC = () => {
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item name="issueDate" label="开具日�?>
+              <Form.Item name="issueDate" label="开具日期>
                 <DatePicker style={{ width: '100%' }} />
               </Form.Item>
             </Col>
@@ -302,7 +302,7 @@ const InvoiceListPage: React.FC = () => {
           </Row>
           <Row gutter={16}>
             <Col span={8}>
-              <Form.Item name="status" label="状�?>
+              <Form.Item name="status" label="状态>
                 <Select>
                   {Object.entries(STATUS_CONFIG).map(([k, v]) => (
                     <Option key={k} value={k}>{v.label}</Option>
@@ -311,7 +311,7 @@ const InvoiceListPage: React.FC = () => {
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item name="issueDate" label="开具日�?>
+              <Form.Item name="issueDate" label="开具日期>
                 <DatePicker style={{ width: '100%' }} />
               </Form.Item>
             </Col>
@@ -336,14 +336,14 @@ const InvoiceListPage: React.FC = () => {
       >
         {payingInvoice && (
           <div style={{ marginBottom: 16 }}>
-            <Text>发票�? <Text strong>{payingInvoice.invoiceNo}</Text></Text><br />
+            <Text>发票号 <Text strong>{payingInvoice.invoiceNo}</Text></Text><br />
             <Text>总额: <Text strong>¥{payingInvoice.totalAmount.toFixed(2)}</Text></Text><br />
             <Text>已付: <Text type="success">¥{payingInvoice.paidAmount.toFixed(2)}</Text></Text><br />
             <Text>待付: <Text type="danger">¥{(payingInvoice.totalAmount - payingInvoice.paidAmount).toFixed(2)}</Text></Text>
           </div>
         )}
         <Form form={payForm} layout="vertical" onFinish={handlePay}>
-          <Form.Item name="amount" label="支付金额" rules={[{ required: true, message: '请输入金�? }]}>
+          <Form.Item name="amount" label="支付金额" rules={[{ required: true, message: '请输入金额 }]}>
             <InputNumber min={0.01} precision={2} style={{ width: '100%' }} prefix="¥" />
           </Form.Item>
         </Form>
