@@ -2,13 +2,14 @@ import React, { useEffect, useState } from 'react';
 import {
   Table, Card, Button, Input, Space, Tag, Modal, Form,
   Row, Col, message, Popconfirm, Typography, Descriptions,
-  Drawer, Select, Radio,
+  Drawer, Select, Radio, DatePicker, InputNumber,
 } from 'antd';
 import {
   PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined,
 } from '@ant-design/icons';
 import { useClientStore } from '../stores/clientStore';
 import { Client, CreateClientDto, UpdateClientDto, ClientType, ClientStatus } from '../types/api';
+import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -24,6 +25,13 @@ const statusLabels: Record<ClientStatus, string> = {
 };
 const statusColors: Record<ClientStatus, string> = {
   ACTIVE: 'green', INACTIVE: 'default', POTENTIAL: 'orange', CLOSED: 'red',
+};
+
+const servicePlanLabels: Record<string, string> = {
+  RETAINER: '常年顾问',
+  HOURLY: '按小时',
+  FIXED: '固定费用',
+  NONE: '无',
 };
 
 const ClientListPage: React.FC = () => {
@@ -47,13 +55,18 @@ const ClientListPage: React.FC = () => {
     fetchClients({ page, pageSize, search, clientType: typeFilter });
   };
 
-  const handleSubmit = async (values: CreateClientDto) => {
+  const handleSubmit = async (values: any) => {
     try {
+      const data: CreateClientDto = {
+        ...values,
+        serviceStart: values.serviceStart ? values.serviceStart.format('YYYY-MM-DD') : undefined,
+        serviceEnd: values.serviceEnd ? values.serviceEnd.format('YYYY-MM-DD') : undefined,
+      };
       if (editingClient) {
-        await updateClient(editingClient.id, values as UpdateClientDto);
+        await updateClient(editingClient.id, data as UpdateClientDto);
         message.success('客户更新成功');
       } else {
-        await createClient(values);
+        await createClient(data);
         message.success('客户创建成功');
       }
       setIsModalOpen(false);
@@ -76,6 +89,8 @@ const ClientListPage: React.FC = () => {
     form.setFieldsValue({
       ...client,
       tags: client.tags?.join(', '),
+      serviceStart: client.serviceStart ? dayjs(client.serviceStart) : undefined,
+      serviceEnd: client.serviceEnd ? dayjs(client.serviceEnd) : undefined,
     });
     setIsModalOpen(true);
   };
@@ -212,6 +227,36 @@ const ClientListPage: React.FC = () => {
           <Form.Item name="address" label="地址">
             <Input.TextArea rows={2} />
           </Form.Item>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="servicePlan" label="服务计划">
+                <Select allowClear placeholder="选择服务计划">
+                  {Object.entries(servicePlanLabels).map(([k, v]) => (
+                    <Option key={k} value={k}>{v}</Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="monthlyFee" label="月费（元）">
+                <InputNumber min={0} precision={2} style={{ width: '100%' }} prefix="¥" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="serviceStart" label="服务开始">
+                <DatePicker style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="serviceEnd" label="服务结束">
+                <DatePicker style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
+
           <Form.Item name="notes" label="备注">
             <Input.TextArea rows={3} />
           </Form.Item>
@@ -234,6 +279,10 @@ const ClientListPage: React.FC = () => {
             <Descriptions.Item label="对接人">{viewClient.contactName || '-'}</Descriptions.Item>
             <Descriptions.Item label="对接人电话">{viewClient.contactPhone || '-'}</Descriptions.Item>
             <Descriptions.Item label="地址">{viewClient.address || '-'}</Descriptions.Item>
+            <Descriptions.Item label="服务计划">{viewClient.servicePlan ? (servicePlanLabels[viewClient.servicePlan] || viewClient.servicePlan) : '-'}</Descriptions.Item>
+            <Descriptions.Item label="月费">{viewClient.monthlyFee != null ? `¥${viewClient.monthlyFee}` : '-'}</Descriptions.Item>
+            <Descriptions.Item label="服务开始">{viewClient.serviceStart || '-'}</Descriptions.Item>
+            <Descriptions.Item label="服务结束">{viewClient.serviceEnd || '-'}</Descriptions.Item>
             <Descriptions.Item label="业务数">{viewClient.totalMatters}</Descriptions.Item>
             <Descriptions.Item label="累计金额">¥{viewClient.totalAmount}</Descriptions.Item>
             <Descriptions.Item label="备注">{viewClient.notes || '-'}</Descriptions.Item>

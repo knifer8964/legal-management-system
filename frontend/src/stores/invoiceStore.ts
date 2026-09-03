@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { invoiceService } from '../services/invoiceService';
-import { Invoice, CreateInvoiceDto, UpdateInvoiceDto, InvoiceQueryParams } from '../types/api';
+import { Invoice, CreateInvoiceDto, UpdateInvoiceDto, InvoiceQueryParams, Payment } from '../types/api';
 
 interface Pagination {
   page: number;
@@ -17,7 +17,8 @@ interface InvoiceState {
   createInvoice: (data: CreateInvoiceDto) => Promise<Invoice>;
   updateInvoice: (id: number, data: UpdateInvoiceDto) => Promise<Invoice>;
   deleteInvoice: (id: number) => Promise<void>;
-  recordPayment: (id: number, amount: number) => Promise<Invoice>;
+  recordPayment: (id: number, amount: number, method?: string, note?: string) => Promise<Invoice>;
+  getPayments: (id: number) => Promise<Payment[]>;
   linkTimeEntries: (id: number, timeEntryIds: number[]) => Promise<Invoice>;
 }
 
@@ -59,12 +60,16 @@ export const useInvoiceStore = create<InvoiceState>((set) => ({
     }));
   },
 
-  recordPayment: async (id, amount) => {
-    const invoice = await invoiceService.recordPayment(id, amount);
+  recordPayment: async (id, amount, method, note) => {
+    const invoice = await invoiceService.recordPayment(id, amount, method, note);
     set((state) => ({
       invoices: state.invoices.map((inv) => (inv.id === id ? invoice : inv)),
     }));
     return invoice;
+  },
+
+  getPayments: async (id) => {
+    return invoiceService.getPayments(id);
   },
 
   linkTimeEntries: async (id, timeEntryIds) => {

@@ -4,7 +4,7 @@
 
 import { Router } from 'express';
 import matterController from '../controllers/matterController';
-import { authenticateToken } from '../middleware/authMiddleware';
+import { authenticateToken, checkPermission } from '../middleware/authMiddleware';
 
 const router = Router();
 
@@ -18,14 +18,14 @@ router.get('/stats', (req, res, next) => matterController.getStats(req, res, nex
 router.get('/no/:no', (req, res, next) => matterController.findByNo(req, res, next));
 
 // CRUD
-router.post('/', (req, res, next) => matterController.create(req, res, next));
+router.post('/', checkPermission('matter:write'), (req, res, next) => matterController.create(req, res, next));
 router.get('/', (req, res, next) => matterController.findAll(req, res, next));
 router.get('/:id', (req, res, next) => matterController.findById(req, res, next));
-router.put('/:id', (req, res, next) => matterController.update(req, res, next));
-router.delete('/:id', (req, res, next) => matterController.delete(req, res, next));
+router.put('/:id', checkPermission('matter:write'), (req, res, next) => matterController.update(req, res, next));
+router.delete('/:id', checkPermission('matter:delete'), (req, res, next) => matterController.delete(req, res, next));
 
 // 状态更新
-router.patch('/:id/status', (req, res, next) => matterController.updateStatus(req, res, next));
+router.patch('/:id/status', checkPermission('matter:write'), (req, res, next) => matterController.updateStatus(req, res, next));
 
 // 时间线
 router.get('/:id/timeline', (req, res, next) => matterController.getTimeline(req, res, next));

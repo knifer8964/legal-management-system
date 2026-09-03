@@ -13,6 +13,7 @@ import {
   TeamOutlined as UsersOutlined,
   FileTextOutlined,
   FolderOutlined,
+  SafetyCertificateOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useEffect, useRef } from 'react';
@@ -53,6 +54,7 @@ const AppLayout: React.FC = () => {
     { key: '/communications', icon: <MessageOutlined />, label: '沟通记录' },
     { key: '/documents', icon: <FolderOutlined />, label: '文档管理' },
     { key: '/users', icon: <UsersOutlined />, label: '用户管理' },
+    { key: '/roles', icon: <SafetyCertificateOutlined />, label: '角色管理' },
   ];
 
   const userMenuItems = [

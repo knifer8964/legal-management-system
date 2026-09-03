@@ -1,7 +1,7 @@
 import httpService from './http';
 import {
   Invoice, CreateInvoiceDto, UpdateInvoiceDto, InvoiceQueryParams,
-  ApiResponse, PaginatedResponse,
+  Payment, ApiResponse, PaginatedResponse,
 } from '../types/api';
 
 class InvoiceService {
@@ -40,8 +40,13 @@ class InvoiceService {
     return res.data!;
   }
 
-  async recordPayment(id: number, amount: number) {
-    const res = await httpService.post<ApiResponse<Invoice>>(`/invoices/${id}/payment`, { amount });
+  async recordPayment(id: number, amount: number, method?: string, note?: string) {
+    const res = await httpService.post<ApiResponse<Invoice>>(`/invoices/${id}/payment`, { amount, method, note });
+    return res.data!;
+  }
+
+  async getPayments(id: number) {
+    const res = await httpService.get<ApiResponse<Payment[]>>(`/invoices/${id}/payments`);
     return res.data!;
   }
 }

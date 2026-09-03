@@ -6,7 +6,8 @@ import {
 import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined, CheckOutlined } from '@ant-design/icons';
 import { useTaskStore } from '../stores/taskStore';
 import { useMatterStore } from '../stores/matterStore';
-import { Task, CreateTaskDto, UpdateTaskDto, TaskStatus, Priority, Matter } from '../types/api';
+import { useUserStore } from '../stores/userStore';
+import { Task, CreateTaskDto, UpdateTaskDto, TaskStatus, Priority, Matter, User } from '../types/api';
 import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
@@ -17,9 +18,18 @@ const statusColors: Record<TaskStatus, string> = { TODO: 'orange', IN_PROGRESS: 
 const priorityColors: Record<Priority, string> = { HIGH: 'red', MEDIUM: 'orange', LOW: 'blue', URGENT: 'purple' };
 const priorityLabels: Record<Priority, string> = { HIGH: '高', MEDIUM: '中', LOW: '低', URGENT: '紧急' };
 
+// 四列看板列定义
+const BOARD_COLUMNS: { key: TaskStatus; title: string; color: string }[] = [
+  { key: 'TODO', title: '待办', color: 'orange' },
+  { key: 'IN_PROGRESS', title: '进行中', color: 'blue' },
+  { key: 'DONE', title: '已完成', color: 'green' },
+  { key: 'CANCELLED', title: '已取消', color: 'default' },
+];
+
 const TaskBoardPage: React.FC = () => {
   const { tasks, loading, fetchTasks, createTask, updateTask, toggleTask, deleteTask } = useTaskStore();
   const { matters, fetchMatters } = useMatterStore();
+  const { users, fetchUsers } = useUserStore();
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<TaskStatus | undefined>();
@@ -27,15 +37,19 @@ const TaskBoardPage: React.FC = () => {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [form] = Form.useForm();
 
-  useEffect(() => { fetchMatters({ page: 1, pageSize: 100 }); }, []);
   useEffect(() => {
-    fetchTasks({ page: 1, pageSize: 50, search, status: statusFilter });
+    fetchMatters({ page: 1, pageSize: 100 });
+    fetchUsers({ page: 1, pageSize: 200 });
+  }, []);
+  useEffect(() => {
+    fetchTasks({ page: 1, pageSize: 200, search, status: statusFilter });
   }, [search, statusFilter]);
 
   const handleSubmit = async (values: any) => {
     try {
       const data: CreateTaskDto = {
         ...values,
+        userId: values.userId,
         dueDate: values.dueDate?.format('YYYY-MM-DD'),
       };
       if (editingTask) {
@@ -48,7 +62,7 @@ const TaskBoardPage: React.FC = () => {
       setIsModalOpen(false);
       form.resetFields();
       setEditingTask(null);
-      fetchTasks({ page: 1, pageSize: 50, search, status: statusFilter });
+      fetchTasks({ page: 1, pageSize: 200, search, status: statusFilter });
     } catch (e: any) {
       message.error(e.response?.data?.message || e.message || '操作失败');
     }
@@ -59,13 +73,11 @@ const TaskBoardPage: React.FC = () => {
     setEditingTask(task);
     form.setFieldsValue({
       ...task,
+      userId: task.userId,
       dueDate: task.dueDate ? dayjs(task.dueDate) : undefined,
     });
     setIsModalOpen(true);
   };
-
-  const todoTasks = tasks.filter((t) => t.status === 'TODO');
-  const doneTasks = tasks.filter((t) => t.status === 'DONE');
 
   const renderTaskCard = (task: Task) => (
     <Card size="small" style={{ marginBottom: 12, cursor: 'pointer' }} onClick={() => openEdit(task)}>
@@ -73,6 +85,9 @@ const TaskBoardPage: React.FC = () => {
         <div>
           <Text strong>{task.title}</Text>
           <div><Text type="secondary" style={{ fontSize: 12 }}>{task.matter?.title || '无关联业务'}</Text></div>
+          {task.user && (
+            <div><Text type="secondary" style={{ fontSize: 12 }}>负责人: {task.user.realName || task.user.username}</Text></div>
+          )}
           {task.dueDate && (
             <Tag color={new Date(task.dueDate) < new Date() ? 'red' : 'default'} style={{ marginTop: 8 }}>
               截止 {new Date(task.dueDate).toLocaleDateString()}
@@ -92,6 +107,23 @@ const TaskBoardPage: React.FC = () => {
       </div>
     </Card>
   );
+
+  const renderColumn = (col: { key: TaskStatus; title: string; color: string }) => {
+    const colTasks = tasks.filter((t) => t.status === col.key);
+    return (
+      <Col xs={24} sm={12} md={6} key={col.key}>
+        <Card
+          title={<span>{col.title} <Tag color={col.color}>{colTasks.length}</Tag></span>}
+          style={{ minHeight: 300 }}
+        >
+          {colTasks.map(renderTaskCard)}
+          {colTasks.length === 0 && (
+            <div style={{ textAlign: 'center', color: '#999', padding: '24px 0' }}>暂无任务</div>
+          )}
+        </Card>
+      </Col>
+    );
+  };
 
   return (
     <div>
@@ -117,16 +149,7 @@ const TaskBoardPage: React.FC = () => {
         <List loading={loading} dataSource={tasks} renderItem={(task) => <List.Item>{renderTaskCard(task)}</List.Item>} />
       ) : (
         <Row gutter={16}>
-          <Col xs={24} md={12}>
-            <Card title={`待办/进行中 (${todoTasks.length})`}>
-              {todoTasks.map(renderTaskCard)}
-            </Card>
-          </Col>
-          <Col xs={24} md={12}>
-            <Card title={`已完成 (${doneTasks.length})`}>
-              {doneTasks.map(renderTaskCard)}
-            </Card>
-          </Col>
+          {BOARD_COLUMNS.map(renderColumn)}
         </Row>
       )}
 
@@ -136,6 +159,11 @@ const TaskBoardPage: React.FC = () => {
           <Form.Item name="matterId" label="关联业务">
             <Select showSearch optionFilterProp="children" allowClear>
               {matters.map((m: Matter) => <Option key={m.id} value={m.id}>{m.matterNo} - {m.title}</Option>)}
+            </Select>
+          </Form.Item>
+          <Form.Item name="userId" label="负责人">
+            <Select showSearch optionFilterProp="children" allowClear placeholder="选择负责人">
+              {users.map((u: User) => <Option key={u.id} value={u.id}>{u.realName || u.username}</Option>)}
             </Select>
           </Form.Item>
           <Row gutter={16}>

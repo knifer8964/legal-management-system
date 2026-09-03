@@ -1,8 +1,34 @@
-需求对标修复: 修复乱码/路由缺口/清理遗留文件/更新README
+需求缺口全量修复: RBAC+角色管理+任务完善+发票付款明细+文档上传+虚拟法务部+客户服务计划
 
-- 修复 InvoiceListPage.tsx 19处中文乱码(U+FFFD替换字符)
-- 新增 ProfilePage.tsx 并注册 /profile 路由
-- 清理 8 个 .ts.disabled 遗留文件(早期SaaS版合同/AI Agent/知识库)
-- 重写 README.md 从早期SaaS定位更新为个人法务工作室管理系统
-- 新增 scripts/fix-invoice-encoding.js 修复工具
-- 新增需求对标复核报告(rvw-rigel产出)
+## RBAC 角色管理 (fix-rbac-role-mgmt)
+- 新增 roleService/roleController/roleRoutes (6端点: CRUD+角色用户列表)
+- 新增 RoleListPage 前端页面 + roleService/roleStore
+- 7个路由模块挂载 checkPermission (clients/matters/tasks/communications/time-entries/invoices/documents)
+
+## 任务管理完善 (fix-task-invoice-client)
+- taskService.create 支持指定 userId (不再硬编码当前用户)
+- TaskBoardPage 改为4列看板 (待办/进行中/已完成/已取消)
+- 创建/编辑表单新增负责人选择框
+
+## 发票付款明细
+- Prisma 新增 Payment 模型 + 迁移
+- invoiceService.recordPayment 改为事务内同时创建 Payment 记录
+- 新增 GET /:id/payments 端点
+- InvoiceListPage 支付弹窗新增付款记录历史展示
+
+## 客户服务计划前端
+- ClientListPage 表单新增 servicePlan/monthlyFee/serviceStart/serviceEnd 字段
+- 详情 Drawer 同步展示
+
+## 文档真实文件上传 (fix-doc-upload-virtual-legal)
+- documentRoutes 挂载 uploadDocument multer 中间件
+- documentController 新增 upload/download 方法
+- DocumentListPage 改为真实文件上传 (Ant Design Upload Dragger)
+- 新增文件下载按钮
+
+## 虚拟法务部 API
+- 新增 enterpriseConfigService/enterpriseConfigController/enterpriseConfigRoutes (7端点)
+- 前端新增 enterpriseConfigService/enterpriseConfigStore
+- types/api.ts 新增 EnterpriseConfig/EnterpriseMember 类型
+
+编译: 后端 tsc --noEmit 零错误 | 前端 tsc --noEmit 零错误

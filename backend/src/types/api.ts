@@ -297,6 +297,7 @@ export interface Task {
 
 export interface CreateTaskDto {
   matterId?: number;
+  userId?: number;
   title: string;
   description?: string;
   status?: TaskStatus;
@@ -313,6 +314,7 @@ export interface UpdateTaskDto {
   dueDate?: string;
   reminderAt?: string;
   matterId?: number;
+  userId?: number;
 }
 
 export interface TaskQueryParams extends PaginationParams {
@@ -530,6 +532,20 @@ export interface InvoiceQueryParams extends PaginationParams {
   startDate?: string;
   endDate?: string;
   search?: string;
+}
+
+// =====================================================
+// 发票付款明细
+// =====================================================
+
+export interface Payment {
+  id: number;
+  invoiceId: number;
+  amount: number;
+  paymentDate: string;
+  method: string | null;
+  note: string | null;
+  createdAt: string;
 }
 
 // =====================================================

@@ -300,6 +300,7 @@ export interface Task {
 
 export interface CreateTaskDto {
   matterId?: number;
+  userId?: number;
   title: string;
   description?: string;
   status?: TaskStatus;
@@ -316,6 +317,7 @@ export interface UpdateTaskDto {
   dueDate?: string;
   reminderAt?: string;
   matterId?: number;
+  userId?: number;
 }
 
 export interface TaskQueryParams extends PaginationParams {
@@ -540,6 +542,20 @@ export interface InvoiceQueryParams extends PaginationParams {
 }
 
 // =====================================================
+// 发票付款明细
+// =====================================================
+
+export interface Payment {
+  id: number;
+  invoiceId: number;
+  amount: number;
+  paymentDate: string;
+  method: string | null;
+  note: string | null;
+  createdAt: string;
+}
+
+// =====================================================
 // 文档管理 (Document) (M9)
 // =====================================================
 
@@ -612,22 +628,74 @@ export interface DocumentStats {
 // 企业配置 (EnterpriseConfig)
 // =====================================================
 
+export interface EnterpriseMember {
+  name: string;
+  phone?: string;
+  email?: string;
+  role?: string;
+  department?: string;
+}
+
 export interface EnterpriseConfig {
   id: number;
   clientId: number;
-  serviceMode: string | null;
-  responseTime: string | null;
-  contractNo: string | null;
-  contractStart: string | null;
-  contractEnd: string | null;
-  monthlyFee: number | null;
-  includedHours: number | null;
-  extraHourRate: number | null;
-  autoRenew: boolean;
-  responsibleLawyer: string | null;
-  assistant: string | null;
+  serviceLevel: string;
+  responseTime: number;
+  monthlyQuota: number;
+  usedQuota: number;
+  oaWebhookUrl: string | null;
+  oaApiKey: string | null;
+  oaApiSecret: string | null;
+  dingtalkToken: string | null;
+  wecomCorpId: string | null;
+  wecomAgentId: string | null;
+  wecomSecret: string | null;
+  members: EnterpriseMember[] | null;
+  portalTitle: string | null;
+  portalLogo: string | null;
+  portalTheme: string | null;
+  customFields: any;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CreateEnterpriseConfigDto {
+  clientId: number;
+  serviceLevel?: string;
+  responseTime?: number;
+  monthlyQuota?: number;
+  usedQuota?: number;
+  oaWebhookUrl?: string;
+  oaApiKey?: string;
+  oaApiSecret?: string;
+  dingtalkToken?: string;
+  wecomCorpId?: string;
+  wecomAgentId?: string;
+  wecomSecret?: string;
+  members?: EnterpriseMember[];
+  portalTitle?: string;
+  portalLogo?: string;
+  portalTheme?: string;
+  customFields?: any;
+}
+
+export interface UpdateEnterpriseConfigDto {
+  serviceLevel?: string;
+  responseTime?: number;
+  monthlyQuota?: number;
+  usedQuota?: number;
+  oaWebhookUrl?: string;
+  oaApiKey?: string;
+  oaApiSecret?: string;
+  dingtalkToken?: string;
+  wecomCorpId?: string;
+  wecomAgentId?: string;
+  wecomSecret?: string;
+  members?: EnterpriseMember[];
+  portalTitle?: string;
+  portalLogo?: string;
+  portalTheme?: string;
+  customFields?: any;
 }
 
 // =====================================================

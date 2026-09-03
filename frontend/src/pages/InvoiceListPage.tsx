@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import {
   Button, Table, Tag, Space, Typography, Modal, Form,
-  Row, Col, Input, Select, DatePicker, InputNumber, message, Statistic, Popconfirm,
+  Row, Col, Input, Select, DatePicker, InputNumber, message, Statistic, Popconfirm, Drawer, List,
 } from 'antd';
 import {
-  PlusOutlined, DeleteOutlined, DollarOutlined, EditOutlined,
+  PlusOutlined, DeleteOutlined, DollarOutlined, EditOutlined, FileTextOutlined,
 } from '@ant-design/icons';
 import { useInvoiceStore } from '../stores/invoiceStore';
 import { useClientStore } from '../stores/clientStore';
 import { useMatterStore } from '../stores/matterStore';
-import { Invoice, CreateInvoiceDto, Client, Matter, InvoiceStatus } from '../types/api';
+import { Invoice, CreateInvoiceDto, Client, Matter, InvoiceStatus, Payment } from '../types/api';
 import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
@@ -17,16 +17,24 @@ const { Option } = Select;
 
 const STATUS_CONFIG: Record<InvoiceStatus, { color: string; label: string }> = {
   DRAFT: { color: 'default', label: '草稿' },
-  ISSUED: { color: 'blue', label: '已开具 },
-  SENT: { color: 'cyan', label: '已发送 },
+  ISSUED: { color: 'blue', label: '已开具' },
+  SENT: { color: 'cyan', label: '已发送' },
   PARTIAL: { color: 'orange', label: '部分支付' },
-  PAID: { color: 'green', label: '已支付 },
+  PAID: { color: 'green', label: '已支付' },
   OVERDUE: { color: 'red', label: '逾期' },
-  CANCELLED: { color: 'default', label: '已取消 },
+  CANCELLED: { color: 'default', label: '已取消' },
+};
+
+const PAYMENT_METHOD_CONFIG: Record<string, string> = {
+  WECHAT: '微信',
+  ALIPAY: '支付宝',
+  BANK: '银行转账',
+  CASH: '现金',
+  OTHER: '其他',
 };
 
 const InvoiceListPage: React.FC = () => {
-  const { invoices, pagination, fetchInvoices, createInvoice, deleteInvoice, updateInvoice, recordPayment } = useInvoiceStore();
+  const { invoices, pagination, fetchInvoices, createInvoice, deleteInvoice, updateInvoice, recordPayment, getPayments } = useInvoiceStore();
   const { clients, fetchClients } = useClientStore();
   const { matters, fetchMatters } = useMatterStore();
 
@@ -35,6 +43,10 @@ const InvoiceListPage: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [payingInvoice, setPayingInvoice] = useState<Invoice | null>(null);
+  const [paymentsVisible, setPaymentsVisible] = useState(false);
+  const [paymentsLoading, setPaymentsLoading] = useState(false);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null);
   const [form] = Form.useForm();
   const [editForm] = Form.useForm();
   const [payForm] = Form.useForm();
@@ -97,7 +109,7 @@ const InvoiceListPage: React.FC = () => {
   const handlePay = async (values: any) => {
     if (!payingInvoice) return;
     try {
-      await recordPayment(payingInvoice.id, values.amount);
+      await recordPayment(payingInvoice.id, values.amount, values.method, values.note);
       message.success('支付记录成功');
       setIsPayModalOpen(false);
       setPayingInvoice(null);
@@ -125,12 +137,27 @@ const InvoiceListPage: React.FC = () => {
 
   const openPay = (invoice: Invoice) => {
     setPayingInvoice(invoice);
-    payForm.setFieldsValue({ amount: invoice.totalAmount - invoice.paidAmount });
+    payForm.setFieldsValue({ amount: invoice.totalAmount - invoice.paidAmount, method: 'BANK' });
     setIsPayModalOpen(true);
   };
 
+  const openPayments = async (invoice: Invoice) => {
+    setViewingInvoice(invoice);
+    setPaymentsVisible(true);
+    setPaymentsLoading(true);
+    try {
+      const list = await getPayments(invoice.id);
+      setPayments(list);
+    } catch (e: any) {
+      message.error(e.response?.data?.error?.message || e.message || '获取付款记录失败');
+      setPayments([]);
+    } finally {
+      setPaymentsLoading(false);
+    }
+  };
+
   const columns = [
-    { title: '发票号, dataIndex: 'invoiceNo', render: (v: string) => <Text strong>{v}</Text> },
+    { title: '发票号', dataIndex: 'invoiceNo', render: (v: string) => <Text strong>{v}</Text> },
     { title: '客户', dataIndex: ['client', 'name'], render: (_: any, r: Invoice) => r.client?.name || '-' },
     { title: '业务', dataIndex: ['matter', 'title'], render: (_: any, r: Invoice) => r.matter?.title || '-' },
     { title: '小计', dataIndex: 'subtotal', render: (v: number) => `¥${v.toFixed(2)}` },
@@ -138,26 +165,28 @@ const InvoiceListPage: React.FC = () => {
     { title: '总额', dataIndex: 'totalAmount', render: (v: number) => <Text strong>¥{v.toFixed(2)}</Text> },
     { title: '已付', dataIndex: 'paidAmount', render: (v: number) => v > 0 ? <Text type="success">¥{v.toFixed(2)}</Text> : '-' },
     {
-      title: '状态, dataIndex: 'status',
+      title: '状态',
+      dataIndex: 'status',
       render: (v: InvoiceStatus) => {
         const cfg = STATUS_CONFIG[v] || { color: 'default', label: v };
         return <Tag color={cfg.color}>{cfg.label}</Tag>;
       },
     },
-    { title: '开具日期, dataIndex: 'issueDate', render: (v: string | null) => v ? dayjs(v).format('YYYY-MM-DD') : '-' },
-    { title: '到期日期, dataIndex: 'dueDate', render: (v: string | null) => v ? dayjs(v).format('YYYY-MM-DD') : '-' },
+    { title: '开具日期', dataIndex: 'issueDate', render: (v: string | null) => v ? dayjs(v).format('YYYY-MM-DD') : '-' },
+    { title: '到期日期', dataIndex: 'dueDate', render: (v: string | null) => v ? dayjs(v).format('YYYY-MM-DD') : '-' },
     {
-      title: '操作', key: 'action', width: 180,
+      title: '操作', key: 'action', width: 240,
       render: (_: any, r: Invoice) => (
         <Space size="small">
           <Button size="small" type="link" icon={<DollarOutlined />}
             disabled={r.status === 'PAID' || r.status === 'CANCELLED'}
             onClick={() => openPay(r)}>付款</Button>
+          <Button size="small" type="link" icon={<FileTextOutlined />} onClick={() => openPayments(r)}>付款记录</Button>
           <Button size="small" type="link" icon={<EditOutlined />} onClick={() => openEdit(r)} />
           <Popconfirm
             title="确认删除"
-            description="确定要删除这张发票吗？
-            onConfirm={async () => { try { await deleteInvoice(r.id); message.success('已删除); } catch (e: any) { message.error(e?.response?.data?.error?.message || '删除失败'); } }}
+            description="确定要删除这张发票吗？"
+            onConfirm={async () => { try { await deleteInvoice(r.id); message.success('已删除'); } catch (e: any) { message.error(e?.response?.data?.error?.message || '删除失败'); } }}
             okText="删除"
             cancelText="取消"
             okButtonProps={{ danger: true }}
@@ -175,13 +204,13 @@ const InvoiceListPage: React.FC = () => {
 
       {/* 统计卡片 */}
       <Row gutter={16} style={{ marginBottom: 16 }}>
-        <Col xs={12} md={6}><Statistic title="发票号 value={invoices.length} /></Col>
+        <Col xs={12} md={6}><Statistic title="发票数" value={invoices.length} /></Col>
         <Col xs={12} md={6}><Statistic title="总金额" value={`¥${totalAmount.toFixed(2)}`} /></Col>
         <Col xs={12} md={6}><Statistic title="已收" value={`¥${totalPaid.toFixed(2)}`} valueStyle={{ color: '#3f8600' }} /></Col>
         <Col xs={12} md={6}><Statistic title="未收" value={`¥${totalUnpaid.toFixed(2)}`} valueStyle={{ color: '#cf1322' }} /></Col>
       </Row>
 
-      {/* 操作区*/}
+      {/* 操作区 */}
       <div style={{ marginBottom: 16 }}>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>新建发票</Button>
       </div>
@@ -222,7 +251,7 @@ const InvoiceListPage: React.FC = () => {
           </Form.Item>
           <Row gutter={16}>
             <Col span={8}>
-              <Form.Item name="subtotal" label="小计金额" rules={[{ required: true, message: '请输入金额 }]}>
+              <Form.Item name="subtotal" label="小计金额" rules={[{ required: true, message: '请输入金额' }]}>
                 <InputNumber min={0} precision={2} style={{ width: '100%' }} prefix="¥" />
               </Form.Item>
             </Col>
@@ -239,7 +268,7 @@ const InvoiceListPage: React.FC = () => {
           </Row>
           <Row gutter={16}>
             <Col span={8}>
-              <Form.Item name="status" label="状态 initialValue="DRAFT">
+              <Form.Item name="status" label="状态" initialValue="DRAFT">
                 <Select>
                   {Object.entries(STATUS_CONFIG).map(([k, v]) => (
                     <Option key={k} value={k}>{v.label}</Option>
@@ -248,7 +277,7 @@ const InvoiceListPage: React.FC = () => {
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item name="issueDate" label="开具日期>
+              <Form.Item name="issueDate" label="开具日期">
                 <DatePicker style={{ width: '100%' }} />
               </Form.Item>
             </Col>
@@ -302,7 +331,7 @@ const InvoiceListPage: React.FC = () => {
           </Row>
           <Row gutter={16}>
             <Col span={8}>
-              <Form.Item name="status" label="状态>
+              <Form.Item name="status" label="状态">
                 <Select>
                   {Object.entries(STATUS_CONFIG).map(([k, v]) => (
                     <Option key={k} value={k}>{v.label}</Option>
@@ -311,7 +340,7 @@ const InvoiceListPage: React.FC = () => {
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item name="issueDate" label="开具日期>
+              <Form.Item name="issueDate" label="开具日期">
                 <DatePicker style={{ width: '100%' }} />
               </Form.Item>
             </Col>
@@ -343,11 +372,48 @@ const InvoiceListPage: React.FC = () => {
           </div>
         )}
         <Form form={payForm} layout="vertical" onFinish={handlePay}>
-          <Form.Item name="amount" label="支付金额" rules={[{ required: true, message: '请输入金额 }]}>
+          <Form.Item name="amount" label="支付金额" rules={[{ required: true, message: '请输入金额' }]}>
             <InputNumber min={0.01} precision={2} style={{ width: '100%' }} prefix="¥" />
+          </Form.Item>
+          <Form.Item name="method" label="支付方式" initialValue="BANK">
+            <Select>
+              {Object.entries(PAYMENT_METHOD_CONFIG).map(([k, v]) => (
+                <Option key={k} value={k}>{v}</Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item name="note" label="备注">
+            <Input.TextArea rows={2} placeholder="付款备注（可选）" />
           </Form.Item>
         </Form>
       </Modal>
+
+      {/* 付款记录抽屉 */}
+      <Drawer
+        title={viewingInvoice ? `付款记录 - ${viewingInvoice.invoiceNo}` : '付款记录'}
+        width={480}
+        open={paymentsVisible}
+        onClose={() => { setPaymentsVisible(false); setViewingInvoice(null); setPayments([]); }}
+      >
+        <List
+          loading={paymentsLoading}
+          dataSource={payments}
+          locale={{ emptyText: '暂无付款记录' }}
+          renderItem={(p: Payment) => (
+            <List.Item>
+              <List.Item.Meta
+                title={<span>¥{p.amount.toFixed(2)} <Tag>{PAYMENT_METHOD_CONFIG[p.method || 'OTHER'] || p.method || '其他'}</Tag></span>}
+                description={
+                  <div>
+                    <div>{dayjs(p.paymentDate).format('YYYY-MM-DD HH:mm')}</div>
+                    {p.note && <div>备注: {p.note}</div>}
+                  </div>
+                }
+              />
+            </List.Item>
+          )}
+        />
+      </Drawer>
     </div>
   );
 };

@@ -8,6 +8,7 @@ import {
   UpdateInvoiceDto,
   InvoiceQueryParams,
   Invoice,
+  Payment,
 } from '../types/api';
 
 const prisma = new PrismaClient();
@@ -269,7 +270,7 @@ export class InvoiceService {
   }
 
   // 记录支付
-  async recordPayment(id: number, amount: number): Promise<Invoice> {
+  async recordPayment(id: number, amount: number, method?: string, note?: string): Promise<Invoice> {
     const invoice = await prisma.invoice.findUnique({ where: { id } });
     if (!invoice) throw new Error('发票不存在');
 
@@ -286,17 +287,38 @@ export class InvoiceService {
       newStatus = InvoiceStatus.PARTIAL;
     }
 
-    const updated = await prisma.invoice.update({
-      where: { id },
-      data: {
-        paidAmount: newPaidAmount,
-        status: newStatus,
-        paidAt,
-      },
-      include: { client: true, matter: true, createdBy: true },
-    });
+    const [updated] = await prisma.$transaction([
+      prisma.invoice.update({
+        where: { id },
+        data: {
+          paidAmount: newPaidAmount,
+          status: newStatus,
+          paidAt,
+        },
+        include: { client: true, matter: true, createdBy: true },
+      }),
+      prisma.payment.create({
+        data: {
+          invoiceId: id,
+          amount,
+          paymentDate: new Date(),
+          method: method || null,
+          note: note || null,
+        },
+      }),
+    ]);
 
     return this.format(updated);
+  }
+
+  // 获取发票付款明细
+  async getPayments(invoiceId: number): Promise<Payment[]> {
+    const payments = await prisma.payment.findMany({
+      where: { invoiceId },
+      orderBy: { paymentDate: 'desc' },
+    });
+
+    return payments.map((p) => this.formatPayment(p));
   }
 
   private format(inv: any): Invoice {
@@ -328,6 +350,18 @@ export class InvoiceService {
         username: inv.createdBy.username,
         realName: inv.createdBy.realName,
       } : undefined,
+    };
+  }
+
+  private formatPayment(p: any): Payment {
+    return {
+      id: p.id,
+      invoiceId: p.invoiceId,
+      amount: Number(p.amount),
+      paymentDate: p.paymentDate.toISOString(),
+      method: p.method || null,
+      note: p.note || null,
+      createdAt: p.createdAt.toISOString(),
     };
   }
 }

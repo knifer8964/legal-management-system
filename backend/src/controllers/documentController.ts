@@ -7,6 +7,58 @@ import documentService from '../services/documentService';
 import { success, Errors } from '../utils/responseUtil';
 
 export class DocumentController {
+  // 上传文档（真实文件，multipart/form-data）
+  async upload(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+    try {
+      if (!req.file) {
+        return Errors.badRequest(res, '未接收到上传文件');
+      }
+
+      const userId = req.user?.userId || 0;
+      const clientId = req.body.clientId ? parseInt(req.body.clientId, 10) : undefined;
+      const matterId = req.body.matterId ? parseInt(req.body.matterId, 10) : undefined;
+      const data = {
+        fileName: req.file.filename,
+        originalName: req.file.originalname,
+        filePath: req.file.path.replace(/\\/g, '/'),
+        fileSize: req.file.size,
+        mimeType: req.file.mimetype,
+        clientId: clientId && !isNaN(clientId) ? clientId : undefined,
+        matterId: matterId && !isNaN(matterId) ? matterId : undefined,
+        category: req.body.category || undefined,
+        tags: this.parseTags(req.body.tags),
+        description: req.body.description || undefined,
+      };
+
+      return success(res, await documentService.create(data, userId), '文档上传成功', 201);
+    } catch (err: any) {
+      return next(err);
+    }
+  }
+
+  // 下载文档（真实文件）
+  async download(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        Errors.badRequest(res, '无效ID');
+        return;
+      }
+      const doc = await documentService.findById(id);
+      if (!doc) {
+        Errors.notFound(res, '文档不存在');
+        return;
+      }
+      res.download(doc.filePath, doc.originalName || doc.fileName, (err) => {
+        if (err && !res.headersSent) {
+          next(err);
+        }
+      });
+    } catch (err: any) {
+      next(err);
+    }
+  }
+
   // 创建文档（元数据）
   async create(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
@@ -24,6 +76,25 @@ export class DocumentController {
     } catch (err: any) {
       return next(err);
     }
+  }
+
+  // 解析 tags（multipart 中为字符串，需转成数组）
+  private parseTags(tags: any): any {
+    if (tags === undefined || tags === null || tags === '') return undefined;
+    if (Array.isArray(tags)) return tags;
+    if (typeof tags === 'string') {
+      const trimmed = tags.trim();
+      if (trimmed.startsWith('[')) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          return Array.isArray(parsed) ? parsed : [parsed];
+        } catch {
+          // 非法 JSON，按逗号分隔处理
+        }
+      }
+      return trimmed.split(',').map((t) => t.trim()).filter(Boolean);
+    }
+    return tags;
   }
 
   // 列表（分页 + 筛选 + 搜索）

@@ -1,20 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import {
   Card, Button, Table, Tag, Space, Typography, Modal, Form,
-  Row, Col, Input, Select, message, Statistic, Popconfirm,
+  Row, Col, Input, Select, message, Statistic, Popconfirm, Upload,
 } from 'antd';
 import {
   PlusOutlined, DeleteOutlined, EditOutlined, FileOutlined,
-  SearchOutlined,
+  SearchOutlined, DownloadOutlined, InboxOutlined,
 } from '@ant-design/icons';
 import { useDocumentStore } from '../stores/documentStore';
 import { useClientStore } from '../stores/clientStore';
 import { useMatterStore } from '../stores/matterStore';
-import { Document, CreateDocumentDto, Client, Matter } from '../types/api';
+import { Document, Client, Matter } from '../types/api';
+import type { UploadFile } from 'antd';
+import { documentService } from '../services/documentService';
 import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
+const { Dragger } = Upload;
 
 const CATEGORY_CONFIG: Record<string, { color: string; label: string }> = {
   CONTRACT: { color: 'blue', label: '合同' },
@@ -36,7 +39,7 @@ function formatFileSize(bytes: number): string {
 const DocumentListPage: React.FC = () => {
   const {
     documents, pagination, loading, stats,
-    fetchDocuments, fetchStats, createDocument, updateDocument, deleteDocument,
+    fetchDocuments, fetchStats, uploadDocument, updateDocument, deleteDocument,
   } = useDocumentStore();
   const { clients, fetchClients } = useClientStore();
   const { matters, fetchMatters } = useMatterStore();
@@ -48,6 +51,8 @@ const DocumentListPage: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState<string | undefined>(undefined);
   const [form] = Form.useForm();
   const [editForm] = Form.useForm();
+  const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     fetchClients({ page: 1, pageSize: 100 });
@@ -61,27 +66,36 @@ const DocumentListPage: React.FC = () => {
   };
 
   const handleCreate = async (values: any) => {
+    if (!fileList.length) {
+      message.error('请选择要上传的文件');
+      return;
+    }
     try {
-      const data: CreateDocumentDto = {
-        fileName: values.fileName,
-        originalName: values.originalName || values.fileName,
-        filePath: values.filePath,
-        fileSize: values.fileSize || 0,
-        mimeType: values.mimeType,
-        clientId: values.clientId,
-        matterId: values.matterId,
-        category: values.category,
-        tags: values.tags ? values.tags.split(',').map((t: string) => t.trim()).filter(Boolean) : undefined,
-        description: values.description,
-      };
-      await createDocument(data);
-      message.success('文档创建成功');
+      const formData = new FormData();
+      const rawFile = (fileList[0] as any)?.originFileObj || (fileList[0] as any);
+      formData.append('file', rawFile);
+      if (values.clientId !== undefined && values.clientId !== null) {
+        formData.append('clientId', String(values.clientId));
+      }
+      if (values.matterId !== undefined && values.matterId !== null) {
+        formData.append('matterId', String(values.matterId));
+      }
+      if (values.category) formData.append('category', values.category);
+      if (values.tags) formData.append('tags', values.tags);
+      if (values.description) formData.append('description', values.description);
+
+      setUploading(true);
+      await uploadDocument(formData);
+      message.success('文档上传成功');
+      setUploading(false);
       setIsModalOpen(false);
       form.resetFields();
+      setFileList([]);
       fetchStats();
       fetchDocuments({ page: 1, pageSize: pagination.pageSize });
     } catch (e: any) {
-      message.error(e.response?.data?.error?.message || e.response?.data?.message || e.message || '创建失败');
+      setUploading(false);
+      message.error(e.response?.data?.error?.message || e.response?.data?.message || e.message || '上传失败');
     }
   };
 
@@ -128,6 +142,14 @@ const DocumentListPage: React.FC = () => {
     setIsEditModalOpen(true);
   };
 
+  const handleDownload = async (doc: Document) => {
+    try {
+      await documentService.download(doc.id, doc.originalName || doc.fileName);
+    } catch (e: any) {
+      message.error(e.message || '下载失败');
+    }
+  };
+
   const columns = [
     {
       title: '文件名', dataIndex: 'fileName',
@@ -153,9 +175,10 @@ const DocumentListPage: React.FC = () => {
     { title: '业务', dataIndex: ['matter', 'title'], render: (_: any, r: Document) => r.matter?.title || '-' },
     { title: '上传时间', dataIndex: 'createdAt', render: (v: string) => dayjs(v).format('YYYY-MM-DD HH:mm') },
     {
-      title: '操作', key: 'action', width: 130,
+      title: '操作', key: 'action', width: 170,
       render: (_: any, r: Document) => (
         <Space size="small">
+          <Button size="small" type="link" icon={<DownloadOutlined />} onClick={() => handleDownload(r)}>下载</Button>
           <Button size="small" type="link" icon={<EditOutlined />} onClick={() => openEdit(r)}>编辑</Button>
           <Popconfirm
             title="确定删除该文档？"
@@ -208,7 +231,7 @@ const DocumentListPage: React.FC = () => {
       {/* 操作栏 + 搜索 */}
       <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
         <Space>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>新建文档</Button>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>上传文档</Button>
         </Space>
         <Space>
           <Select
@@ -248,36 +271,31 @@ const DocumentListPage: React.FC = () => {
         }}
       />
 
-      {/* 创建文档弹窗 */}
+      {/* 上传文档弹窗 */}
       <Modal
-        title="新建文档"
+        title="上传文档"
         open={isModalOpen}
         onOk={() => form.submit()}
-        onCancel={() => { setIsModalOpen(false); form.resetFields(); }}
+        confirmLoading={uploading}
+        onCancel={() => { setIsModalOpen(false); form.resetFields(); setFileList([]); }}
         width={640}
       >
         <Form form={form} layout="vertical" onFinish={handleCreate}>
-          <Form.Item name="fileName" label="文件名" rules={[{ required: true, message: '请输入文件名' }]}>
-            <Input placeholder="存储文件名" />
+          <Form.Item name="file" label="文件" rules={[{ required: true, message: '请选择要上传的文件' }]}>
+            <Dragger
+              fileList={fileList}
+              maxCount={1}
+              beforeUpload={(file) => {
+                setFileList([file]);
+                return false;
+              }}
+              onRemove={() => setFileList([])}
+            >
+              <p className="ant-upload-drag-icon"><InboxOutlined /></p>
+              <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
+              <p className="ant-upload-hint">支持 PDF、Word、Excel、PPT、文本等文档，单个文件不超过 50MB</p>
+            </Dragger>
           </Form.Item>
-          <Form.Item name="originalName" label="原始文件名">
-            <Input placeholder="原始文件名（可选，默认同文件名）" />
-          </Form.Item>
-          <Form.Item name="filePath" label="文件路径" rules={[{ required: true, message: '请输入文件路径' }]}>
-            <Input placeholder="/uploads/xxx.pdf" />
-          </Form.Item>
-          <Row gutter={16}>
-            <Col span={8}>
-              <Form.Item name="fileSize" label="文件大小(字节)">
-                <Input type="number" placeholder="0" />
-              </Form.Item>
-            </Col>
-            <Col span={16}>
-              <Form.Item name="mimeType" label="MIME 类型" initialValue="application/octet-stream">
-                <Input placeholder="application/pdf" />
-              </Form.Item>
-            </Col>
-          </Row>
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="clientId" label="关联客户">

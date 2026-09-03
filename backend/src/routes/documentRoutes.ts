@@ -4,7 +4,8 @@
 
 import { Router } from 'express';
 import documentController from '../controllers/documentController';
-import { authenticateToken } from '../middleware/authMiddleware';
+import { authenticateToken, checkPermission } from '../middleware/authMiddleware';
+import { uploadDocument, handleMulterError } from '../middleware/upload';
 
 const router = Router();
 router.use(authenticateToken);
@@ -14,9 +15,16 @@ router.get('/stats', (req, res, next) => documentController.getStats(req, res, n
 
 // CRUD
 router.get('/', (req, res, next) => documentController.findAll(req, res, next));
-router.post('/', (req, res, next) => documentController.create(req, res, next));
+// 文件上传（multipart/form-data，字段名为 file）
+router.post('/', checkPermission('document:write'), uploadDocument.single('file'), (req, res, next) => documentController.upload(req, res, next));
 router.get('/:id', (req, res, next) => documentController.findById(req, res, next));
-router.put('/:id', (req, res, next) => documentController.update(req, res, next));
-router.delete('/:id', (req, res, next) => documentController.delete(req, res, next));
+router.put('/:id', checkPermission('document:write'), (req, res, next) => documentController.update(req, res, next));
+router.delete('/:id', checkPermission('document:delete'), (req, res, next) => documentController.delete(req, res, next));
+
+// 文件下载
+router.get('/:id/download', (req, res, next) => documentController.download(req, res, next));
+
+// multer 错误处理（放在路由之后）
+router.use(handleMulterError);
 
 export default router;

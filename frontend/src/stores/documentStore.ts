@@ -19,6 +19,7 @@ interface DocumentState {
   fetchDocuments: (params?: DocumentQueryParams) => Promise<void>;
   fetchStats: (params?: { clientId?: number; matterId?: number }) => Promise<void>;
   createDocument: (data: CreateDocumentDto) => Promise<Document>;
+  uploadDocument: (formData: FormData) => Promise<Document>;
   updateDocument: (id: number, data: UpdateDocumentDto) => Promise<Document>;
   deleteDocument: (id: number) => Promise<void>;
 }
@@ -50,6 +51,12 @@ export const useDocumentStore = create<DocumentState>((set) => ({
 
   createDocument: async (data) => {
     const doc = await documentService.create(data);
+    set((state) => ({ documents: [doc, ...state.documents] }));
+    return doc;
+  },
+
+  uploadDocument: async (formData) => {
+    const doc = await documentService.uploadDocument(formData);
     set((state) => ({ documents: [doc, ...state.documents] }));
     return doc;
   },

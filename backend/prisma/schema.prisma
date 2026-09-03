@@ -471,6 +471,7 @@ model Invoice {
   matter      Matter?       @relation(fields: [matterId], references: [id])
   createdBy   User          @relation(fields: [createdById], references: [id])
   timeEntries TimeEntry[]
+  payments    Payment[]
 
   @@index([clientId])
   @@index([status])
@@ -486,6 +487,25 @@ enum InvoiceStatus {
   PAID      // 已支付
   OVERDUE   // 逾期
   CANCELLED // 已取消
+}
+
+// =====================================================
+// 发票付款明细
+// =====================================================
+
+model Payment {
+  id          Int       @id @default(autoincrement())
+  invoiceId   Int       @map("invoice_id")
+  amount      Decimal   @db.Decimal(10, 2)
+  paymentDate DateTime  @map("payment_date") @db.DateTime(0)
+  method      String?   @db.VarChar(50) // WECHAT/ALIPAY/BANK/CASH/OTHER
+  note        String?   @db.Text
+  createdAt   DateTime  @default(now()) @map("created_at") @db.DateTime(0)
+
+  invoice     Invoice   @relation(fields: [invoiceId], references: [id])
+
+  @@index([invoiceId])
+  @@map("payments")
 }
 
 // =====================================================

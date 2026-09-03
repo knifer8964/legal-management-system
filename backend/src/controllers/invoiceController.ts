@@ -102,11 +102,20 @@ export class InvoiceController {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) return Errors.badRequest(res, '无效ID');
-      const { amount } = req.body;
+      const { amount, method, note } = req.body;
       if (amount === undefined || amount <= 0) {
         return Errors.badRequest(res, '支付金额必须大于0');
       }
-      return success(res, await invoiceService.recordPayment(id, Number(amount)), '支付记录成功');
+      return success(res, await invoiceService.recordPayment(id, Number(amount), method, note), '支付记录成功');
+    } catch (err: any) { return next(err); }
+  }
+
+  // 获取发票付款明细
+  async getPayments(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return Errors.badRequest(res, '无效ID');
+      return success(res, await invoiceService.getPayments(id));
     } catch (err: any) { return next(err); }
   }
 }

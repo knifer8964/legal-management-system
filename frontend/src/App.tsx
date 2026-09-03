@@ -14,6 +14,7 @@ import InvoiceListPage from './pages/InvoiceListPage';
 import CommunicationPage from './pages/CommunicationPage';
 import DocumentListPage from './pages/DocumentListPage';
 import UserListPage from './pages/UserListPage';
+import RoleListPage from './pages/RoleListPage';
 import ProfilePage from './pages/ProfilePage';
 
 // 路由守卫
@@ -43,6 +44,7 @@ const App: React.FC = () => {
             <Route path="communications" element={<CommunicationPage />} />
             <Route path="documents" element={<DocumentListPage />} />
             <Route path="users" element={<UserListPage />} />
+            <Route path="roles" element={<RoleListPage />} />
             <Route path="profile" element={<ProfilePage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

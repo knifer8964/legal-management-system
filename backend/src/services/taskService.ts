@@ -15,7 +15,7 @@ export class TaskService {
     const task = await prisma.task.create({
       data: {
         matterId: data.matterId || null,
-        userId,
+        userId: data.userId || userId,
         title: data.title,
         description: data.description || null,
         status: data.status || 'TODO',
