@@ -12,6 +12,7 @@ import {
   PlayCircleOutlined,
   TeamOutlined as UsersOutlined,
   FileTextOutlined,
+  FolderOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useEffect, useRef } from 'react';
@@ -50,6 +51,7 @@ const AppLayout: React.FC = () => {
     { key: '/time', icon: <ClockCircleOutlined />, label: '计时收费' },
     { key: '/invoices', icon: <FileTextOutlined />, label: '发票管理' },
     { key: '/communications', icon: <MessageOutlined />, label: '沟通记录' },
+    { key: '/documents', icon: <FolderOutlined />, label: '文档管理' },
     { key: '/users', icon: <UsersOutlined />, label: '用户管理' },
   ];
 

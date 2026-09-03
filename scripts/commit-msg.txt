@@ -1,23 +1,13 @@
-M9: 文档管理后端API完成（documentService/Controller/Routes + 冒烟测试7/7通过）
+docs: M9文档管理前端页面完成（DocumentListPage + service + store，编译零错误）
 
 新增文件:
-- backend/src/services/documentService.ts — 文档CRUD+搜索+分页+按分类/客户/事项筛选+统计
-- backend/src/controllers/documentController.ts — 6个接口控制器
-- backend/src/routes/documentRoutes.ts — 路由注册(stats在:id前)
-- scripts/m9-smoke-test.js — M9冒烟测试脚本(7/7通过)
-- scripts/kill-port3000.bat — 端口清理脚本
-- scripts/kill-port3000.ps1 — 端口清理脚本
+- frontend/src/services/documentService.ts — 文档API调用封装(6接口)
+- frontend/src/stores/documentStore.ts — Zustand store
+- frontend/src/pages/DocumentListPage.tsx — 文档管理页面(统计卡片+表格+创建/编辑弹窗+Popconfirm删除)
 
 修改:
-- backend/src/routes/index.ts — 注册 /documents 路由
-- backend/src/types/api.ts — 新增 DocumentCategory/Document/CreateDocumentDto/UpdateDocumentDto/DocumentQueryParams
+- frontend/src/types/api.ts — 补充Document相关类型
+- frontend/src/App.tsx — 注册 /documents 路由
+- frontend/src/layouts/AppLayout.tsx — 添加「文档管理」菜单项
 
-接口清单(6个):
-- GET /api/v1/documents — 文档列表(分页+筛选category/clientId/matterId+搜索)
-- GET /api/v1/documents/stats — 文档统计(按分类分组)
-- GET /api/v1/documents/:id — 文档详情
-- POST /api/v1/documents — 创建文档元数据
-- PUT /api/v1/documents/:id — 更新文档
-- DELETE /api/v1/documents/:id — 删除文档
-
-虚拟团队协作: dev-cypher后端开发 + tst-verity测试脚本，并发执行
+虚拟团队协作: dev-cypher前端开发

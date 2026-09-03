@@ -540,6 +540,75 @@ export interface InvoiceQueryParams extends PaginationParams {
 }
 
 // =====================================================
+// 文档管理 (Document) (M9)
+// =====================================================
+
+export type DocumentCategory =
+  | 'CONTRACT'
+  | 'EVIDENCE'
+  | 'DELIVERABLE'
+  | 'TEMPLATE'
+  | 'OTHER';
+
+export interface Document {
+  id: number;
+  fileName: string;
+  originalName: string;
+  filePath: string;
+  fileSize: number;
+  mimeType: string;
+  fileHash: string | null;
+
+  clientId: number | null;
+  matterId: number | null;
+  uploaderId: number | null;
+
+  category: string | null;
+  tags: any;
+  description: string | null;
+
+  createdAt: string;
+
+  client?: Client;
+  matter?: Matter;
+}
+
+export interface CreateDocumentDto {
+  fileName: string;
+  originalName?: string;
+  filePath: string;
+  fileSize?: number;
+  mimeType?: string;
+  fileHash?: string;
+  clientId?: number;
+  matterId?: number;
+  category?: string;
+  tags?: any;
+  description?: string;
+}
+
+export interface UpdateDocumentDto {
+  clientId?: number;
+  matterId?: number;
+  category?: string;
+  tags?: any;
+  description?: string;
+}
+
+export interface DocumentQueryParams extends PaginationParams {
+  clientId?: number;
+  matterId?: number;
+  category?: string;
+  search?: string;
+}
+
+export interface DocumentStats {
+  totalDocuments: number;
+  totalSize: number;
+  categoryBreakdown: Record<string, { count: number; totalSize: number }>;
+}
+
+// =====================================================
 // 企业配置 (EnterpriseConfig)
 // =====================================================
 

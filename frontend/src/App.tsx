@@ -12,6 +12,7 @@ import TaskBoardPage from './pages/TaskBoardPage';
 import TimeEntryPage from './pages/TimeEntryPage';
 import InvoiceListPage from './pages/InvoiceListPage';
 import CommunicationPage from './pages/CommunicationPage';
+import DocumentListPage from './pages/DocumentListPage';
 import UserListPage from './pages/UserListPage';
 
 // 路由守卫
@@ -39,6 +40,7 @@ const App: React.FC = () => {
             <Route path="time" element={<TimeEntryPage />} />
             <Route path="invoices" element={<InvoiceListPage />} />
             <Route path="communications" element={<CommunicationPage />} />
+            <Route path="documents" element={<DocumentListPage />} />
             <Route path="users" element={<UserListPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
