@@ -212,7 +212,10 @@ const doc = new Document({
       bullet("访问 http://127.0.0.1:5173，使用 admin / 123456 登录"),
 
       h2("十一、联系方式"),
-      p("如有问题，请在 GitHub Issues 中提交，或联系项目维护者。")
+      p("如有问题，请在 GitHub Issues 中提交，或联系项目维护者。"),
+      new Paragraph({ children: [new PageBreak()] }),
+      h2("附录：数据库快速启动脚本"),
+      p("scripts/start-mysql-redis.bat 会自动后台启动 MySQL 8.4 和 Redis，日志分别输出到 logs/mysql.log 与 logs/redis.log。首次使用新环境时，先执行此脚本再启动后端。")
     ]
   }]
 });
