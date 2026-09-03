@@ -499,6 +499,47 @@ export interface Invoice {
 }
 
 // =====================================================
+// 发票 DTO (M8)
+// =====================================================
+
+export interface CreateInvoiceDto {
+  clientId: number;
+  matterId?: number;
+  subtotal: number;
+  taxRate?: number;
+  discount?: number;
+  status?: InvoiceStatus;
+  issueDate?: string;
+  dueDate?: string;
+  items?: any;
+  notes?: string;
+}
+
+export interface UpdateInvoiceDto {
+  clientId?: number;
+  matterId?: number;
+  subtotal?: number;
+  taxRate?: number;
+  discount?: number;
+  status?: InvoiceStatus;
+  issueDate?: string;
+  dueDate?: string;
+  paidAt?: string;
+  paidAmount?: number;
+  items?: any;
+  notes?: string;
+}
+
+export interface InvoiceQueryParams extends PaginationParams {
+  clientId?: number;
+  matterId?: number;
+  status?: InvoiceStatus;
+  startDate?: string;
+  endDate?: string;
+  search?: string;
+}
+
+// =====================================================
 // 企业配置 (EnterpriseConfig)
 // =====================================================
 

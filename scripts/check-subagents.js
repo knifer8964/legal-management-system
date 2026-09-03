@@ -1,0 +1,10 @@
+const fs = require('fs');
+const c = JSON.parse(fs.readFileSync('C:\\Users\\tatoo\\.qclaw\\openclaw.json', 'utf8'));
+const me = c.agents.list.find(a => a.id === 'agent-d64c8186');
+console.log('=== 硅基先锋 subagents config ===');
+console.log(JSON.stringify(me.subagents, null, 2));
+console.log('\n=== pm-nexus subagents config ===');
+const pm = c.agents.list.find(a => a.id === 'pm-nexus');
+console.log(JSON.stringify(pm.subagents, null, 2));
+console.log('\n=== agents_list allowAny check ===');
+console.log('If allowAny is false and agent has no subagents.allowAgents, spawn only allows self');

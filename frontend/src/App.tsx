@@ -10,6 +10,7 @@ import ClientListPage from './pages/ClientListPage';
 import MatterListPage from './pages/MatterListPage';
 import TaskBoardPage from './pages/TaskBoardPage';
 import TimeEntryPage from './pages/TimeEntryPage';
+import InvoiceListPage from './pages/InvoiceListPage';
 import CommunicationPage from './pages/CommunicationPage';
 import UserListPage from './pages/UserListPage';
 
@@ -36,6 +37,7 @@ const App: React.FC = () => {
             <Route path="matters" element={<MatterListPage />} />
             <Route path="tasks" element={<TaskBoardPage />} />
             <Route path="time" element={<TimeEntryPage />} />
+            <Route path="invoices" element={<InvoiceListPage />} />
             <Route path="communications" element={<CommunicationPage />} />
             <Route path="users" element={<UserListPage />} />
           </Route>
