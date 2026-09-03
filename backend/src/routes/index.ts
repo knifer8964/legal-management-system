@@ -7,6 +7,7 @@ import taskRoutes from './taskRoutes';
 import communicationRoutes from './communicationRoutes';
 import timeEntryRoutes from './timeEntryRoutes';
 import invoiceRoutes from './invoiceRoutes';
+import documentRoutes from './documentRoutes';
 import userRoutes from './userRoutes';
 
 const router = Router();
@@ -20,5 +21,6 @@ router.use('/tasks', taskRoutes);
 router.use('/communications', communicationRoutes);
 router.use('/time-entries', timeEntryRoutes);
 router.use('/invoices', invoiceRoutes);
+router.use('/documents', documentRoutes);
 
 export default router;
