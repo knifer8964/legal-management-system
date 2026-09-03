@@ -15,6 +15,9 @@ const router = Router();
 // 获取用户列表（需要用户查看权限）
 router.get('/', authenticateToken, checkPermission('user:view'), getUsers);
 
+// 获取角色列表（需要角色查看权限）— 必须在 /:id 之前
+router.get('/roles', authenticateToken, checkPermission('role:view'), getRoles);
+
 // 获取单个用户详情（需要用户查看权限）
 router.get('/:id', authenticateToken, checkPermission('user:view'), getUserById);
 
@@ -30,7 +33,7 @@ router.delete('/:id', authenticateToken, checkPermission('user:delete'), deleteU
 // 重置用户密码（需要用户管理权限）
 router.post('/:id/reset-password', authenticateToken, checkPermission('user:manage'), resetPassword);
 
-// 获取角色列表（需要角色查看权限）
-router.get('/roles', authenticateToken, checkPermission('role:view'), getRoles);
+// 获取角色列表（需要角色查看权限）— 已移到 /:id 之前
+// router.get('/roles', authenticateToken, checkPermission('role:view'), getRoles);
 
 export default router;

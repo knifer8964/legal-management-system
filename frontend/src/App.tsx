@@ -11,6 +11,7 @@ import MatterListPage from './pages/MatterListPage';
 import TaskBoardPage from './pages/TaskBoardPage';
 import TimeEntryPage from './pages/TimeEntryPage';
 import CommunicationPage from './pages/CommunicationPage';
+import UserListPage from './pages/UserListPage';
 
 // 路由守卫
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -36,6 +37,7 @@ const App: React.FC = () => {
             <Route path="tasks" element={<TaskBoardPage />} />
             <Route path="time" element={<TimeEntryPage />} />
             <Route path="communications" element={<CommunicationPage />} />
+            <Route path="users" element={<UserListPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

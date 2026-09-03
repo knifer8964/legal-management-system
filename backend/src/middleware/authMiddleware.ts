@@ -97,50 +97,60 @@ export function checkPermission(requiredPermission: string) {
         });
       }
       
-      const permissions = dbUser.role.permissions as Record<string, any>;
+      const permissions = dbUser.role.permissions;
       
-      // 管理员拥有所有权限
-      if (permissions && permissions.all === true) {
+      // 通配权限 ["*"] 或 { all: true } — 管理员拥有所有权限
+      if (Array.isArray(permissions) && permissions.includes('*')) {
+        return next();
+      }
+      if (permissions && typeof permissions === 'object' && !Array.isArray(permissions) && permissions.all === true) {
         return next();
       }
       
-      // 解析权限字符串，支持 "module:action" 格式
-      // 例如: "user:view" -> module="users", action="read"
-      // 例如: "dashboard:view" -> module="dashboard", action="view"
-      const parts = requiredPermission.split(':');
-      if (parts.length === 2) {
-        const [module, action] = parts;
-        
-        // 映射 action 到标准权限值
+      // 数组格式权限: ["user:read", "client:*", "matter:*", ...]
+      if (Array.isArray(permissions)) {
+        const [mod, act] = requiredPermission.split(':');
         const actionMap: Record<string, string> = {
-          'view': 'read',
-          'read': 'read',
-          'create': 'write',
-          'write': 'write',
-          'edit': 'write',
-          'update': 'write',
-          'delete': 'delete',
-          'approve': 'approve',
-          'manage': 'admin',
+          'view': 'read', 'read': 'read',
+          'create': 'write', 'write': 'write', 'edit': 'write', 'update': 'write',
+          'delete': 'delete', 'approve': 'approve', 'manage': 'admin',
         };
+        const normalizedAction = actionMap[act] || act;
         
-        const normalizedAction = actionMap[action] || action;
-        
-        // 检查模块权限
-        if (permissions && permissions[module]) {
-          const modulePerms = permissions[module];
-          if (Array.isArray(modulePerms)) {
-            if (modulePerms.includes(normalizedAction) || modulePerms.includes('admin')) {
-              return next();
-            }
-          } else if (modulePerms === true || modulePerms === 'admin') {
+        for (const perm of permissions) {
+          if (typeof perm !== 'string') continue;
+          if (perm === '*') return next();
+          const [pMod, pAct] = perm.split(':');
+          if (pMod === mod && (pAct === '*' || pAct === normalizedAction || pAct === act)) {
             return next();
           }
         }
-        
-        // 检查 system.admin 是否有全局管理权限
-        if (permissions && permissions.system && Array.isArray(permissions.system)) {
-          if (permissions.system.includes('admin')) {
+      }
+      
+      // 对象格式权限: { module: [actions] }
+      if (permissions && typeof permissions === 'object' && !Array.isArray(permissions)) {
+        const parts = requiredPermission.split(':');
+        if (parts.length === 2) {
+          const [module, action] = parts;
+          const actionMap: Record<string, string> = {
+            'view': 'read', 'read': 'read',
+            'create': 'write', 'write': 'write', 'edit': 'write', 'update': 'write',
+            'delete': 'delete', 'approve': 'approve', 'manage': 'admin',
+          };
+          const normalizedAction = actionMap[action] || action;
+          
+          if (permissions[module]) {
+            const modulePerms = permissions[module];
+            if (Array.isArray(modulePerms)) {
+              if (modulePerms.includes(normalizedAction) || modulePerms.includes('admin') || modulePerms.includes('*')) {
+                return next();
+              }
+            } else if (modulePerms === true || modulePerms === 'admin' || modulePerms === '*') {
+              return next();
+            }
+          }
+          
+          if (permissions.system && Array.isArray(permissions.system) && permissions.system.includes('admin')) {
             return next();
           }
         }

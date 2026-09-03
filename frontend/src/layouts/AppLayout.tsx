@@ -10,6 +10,7 @@ import {
   LogoutOutlined,
   UserOutlined,
   PlayCircleOutlined,
+  TeamOutlined as UsersOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useEffect, useRef } from 'react';
@@ -47,6 +48,7 @@ const AppLayout: React.FC = () => {
     { key: '/tasks', icon: <CheckSquareOutlined />, label: '任务管理' },
     { key: '/time', icon: <ClockCircleOutlined />, label: '计时收费' },
     { key: '/communications', icon: <MessageOutlined />, label: '沟通记录' },
+    { key: '/users', icon: <UsersOutlined />, label: '用户管理' },
   ];
 
   const userMenuItems = [
