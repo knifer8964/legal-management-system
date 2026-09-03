@@ -9,6 +9,7 @@ import timeEntryRoutes from './timeEntryRoutes';
 import invoiceRoutes from './invoiceRoutes';
 import documentRoutes from './documentRoutes';
 import userRoutes from './userRoutes';
+import dashboardRoutes from './dashboardRoutes';
 
 const router = Router();
 
@@ -22,5 +23,6 @@ router.use('/communications', communicationRoutes);
 router.use('/time-entries', timeEntryRoutes);
 router.use('/invoices', invoiceRoutes);
 router.use('/documents', documentRoutes);
+router.use('/dashboard', dashboardRoutes);
 
 export default router;

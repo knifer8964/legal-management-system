@@ -1,24 +1,23 @@
-Code Review 整改: 修复 rvw-rigel 发现的 4 个严重问题
+M10: Dashboard 增强 — 聚合统计接口 + 图表可视化
 
-🔴 #1 userStore 改为 hook 形式
-   - export const useUserStore = create<UserStore>(...)
-   - UserListPage 改用 useUserStore() 调用
-   - 修复错误提取: e.response?.data?.error?.message
+后端新增:
+- services/dashboardService.ts: 聚合统计（客户/业务/任务/计时/发票/文档）
+- controllers/dashboardController.ts: GET /dashboard/summary
+- routes/dashboardRoutes.ts: authenticateToken 守卫
+- routes/index.ts: 注册 /dashboard 路由
+- 一次性返回全部统计数据，避免前端发 7 个请求
 
-🔴 #2 删除 userService.ts 死代码
-   - 全项目无引用，userController 已完整实现
-   - 消除 Prisma 双轨架构漂移风险
+前端重构:
+- services/dashboardService.ts: 类型化 DashboardSummary 接口
+- pages/DashboardPage.tsx: 完全重写
+  - 8 个统计卡片（客户/业务/待办/未收金额/计时/文档/收款率）
+  - 3 个图表（业务状态饼图/任务状态柱状图/发票金额柱状图）via recharts
+  - 逾期任务列表 + 近期业务列表 + 7天内截止业务
+  - 收款率 Progress 进度条
+- 安装 recharts 依赖
 
-🔴 #3 JWT 硬编码 fallback 已在上一个 commit 移除
-
-🔴 #4 userController 错误处理改为 next(err)
-   - 由全局 errorHandler 做 Prisma 错误映射
-   - resetPassword 增加密码长度校验
-
-前端修复:
-- InvoiceListPage: 移除未使用 Card 导入, 删除改 async+try/catch, 错误提取统一
-- DocumentListPage: 移除未使用 r 参数
-- AppLayout: user?.name → user?.realName || username
-- 前端 tsc --noEmit 零错误
-
-回归测试 26/26 通过
+测试:
+- 后端 tsc --noEmit: 零错误
+- 前端 tsc --noEmit: 零错误
+- M10 冒烟测试: /dashboard/summary 200 + 数据正确 + 无 token 401
+- 全量回归 26/26 通过
