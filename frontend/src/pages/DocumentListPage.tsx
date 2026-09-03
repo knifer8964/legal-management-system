@@ -131,7 +131,7 @@ const DocumentListPage: React.FC = () => {
   const columns = [
     {
       title: '文件名', dataIndex: 'fileName',
-      render: (v: string, r: Document) => (
+      render: (v: string) => (
         <Space>
           <FileOutlined style={{ color: '#8c8c8c' }} />
           <Text strong>{v}</Text>

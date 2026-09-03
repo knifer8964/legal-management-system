@@ -1,20 +1,24 @@
-安全修复: M7/M8/M9 安全审计整改
+Code Review 整改: 修复 rvw-rigel 发现的 4 个严重问题
 
-1. [严重] 移除 JWT 硬编码 fallback ('your-secret-key')
-   - authMiddleware.ts / authController.ts / authRoutes.ts
-   - 启动时强制要求 JWT_SECRET 环境变量
-   - 更新 .env 使用高强度随机密钥
+🔴 #1 userStore 改为 hook 形式
+   - export const useUserStore = create<UserStore>(...)
+   - UserListPage 改用 useUserStore() 调用
+   - 修复错误提取: e.response?.data?.error?.message
 
-2. [严重] 登录接口暴力破解防护
-   - 新增 loginLimiter: 15分钟窗口最多10次尝试
-   - 修复原 limiter skip 路径不匹配问题
-   - skipSuccessfulRequests: 成功登录不计数
+🔴 #2 删除 userService.ts 死代码
+   - 全项目无引用，userController 已完整实现
+   - 消除 Prisma 双轨架构漂移风险
 
-3. [安全] 发票金额负数校验
-   - invoiceController.create: subtotal/taxRate 范围校验
-   - invoiceService.create: Math.max(0,...) 双重防护
+🔴 #3 JWT 硬编码 fallback 已在上一个 commit 移除
 
-4. [安全] 文档路径遍历防护
-   - documentController.create: 拒绝包含 .. 和 // 的 filePath
+🔴 #4 userController 错误处理改为 next(err)
+   - 由全局 errorHandler 做 Prisma 错误映射
+   - resetPassword 增加密码长度校验
 
-5. [一致性] InvoiceListPage 删除操作补 Popconfirm 二次确认
+前端修复:
+- InvoiceListPage: 移除未使用 Card 导入, 删除改 async+try/catch, 错误提取统一
+- DocumentListPage: 移除未使用 r 参数
+- AppLayout: user?.name → user?.realName || username
+- 前端 tsc --noEmit 零错误
+
+回归测试 26/26 通过

@@ -98,7 +98,7 @@ const AppLayout: React.FC = () => {
           }}} placement="bottomRight">
             <Space style={{ cursor: 'pointer' }}>
               <Avatar icon={<UserOutlined />} />
-              <Text>{user?.name || '用户'}</Text>
+              <Text>{user?.realName || user?.username || '用户'}</Text>
             </Space>
           </Dropdown>
         </Header>

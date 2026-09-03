@@ -68,7 +68,7 @@ export async function getUsers(req: Request, res: Response, _next: NextFunction)
     });
   } catch (error) {
     logger.error('获取用户列表失败', { error: (error as Error).message });
-    return Errors.internal(res);
+    return _next(error);
   }
 }
 
@@ -104,7 +104,7 @@ export async function getUserById(req: Request, res: Response, _next: NextFuncti
     return success(res, user);
   } catch (error) {
     logger.error('获取用户详情失败', { error: (error as Error).message, userId: req.params.id });
-    return Errors.internal(res);
+    return _next(error);
   }
 }
 
@@ -186,7 +186,7 @@ export async function createUser(req: Request, res: Response, _next: NextFunctio
     return created(res, newUser, '用户创建成功');
   } catch (error) {
     logger.error('创建用户失败', { error: (error as Error).message });
-    return Errors.internal(res);
+    return _next(error);
   }
 }
 
@@ -261,7 +261,7 @@ export async function updateUser(req: Request, res: Response, _next: NextFunctio
     return success(res, updated, '用户更新成功');
   } catch (error) {
     logger.error('更新用户失败', { error: (error as Error).message, userId: req.params.id });
-    return Errors.internal(res);
+    return _next(error);
   }
 }
 
@@ -301,7 +301,7 @@ export async function deleteUser(req: Request, res: Response, _next: NextFunctio
     return success(res, null, '用户已停用');
   } catch (error) {
     logger.error('删除用户失败', { error: (error as Error).message, userId: req.params.id });
-    return Errors.internal(res);
+    return _next(error);
   }
 }
 
@@ -316,6 +316,10 @@ export async function resetPassword(req: Request, res: Response, _next: NextFunc
 
     if (!newPassword) {
       return Errors.badRequest(res, '缺少新密码');
+    }
+
+    if (newPassword.length < 6) {
+      return Errors.badRequest(res, '密码至少6个字符');
     }
 
     const user = await prisma.user.findUnique({
@@ -342,7 +346,7 @@ export async function resetPassword(req: Request, res: Response, _next: NextFunc
     return success(res, null, '密码重置成功');
   } catch (error) {
     logger.error('重置密码失败', { error: (error as Error).message, userId: req.params.id });
-    return Errors.internal(res);
+    return _next(error);
   }
 }
 
@@ -360,6 +364,6 @@ export async function getRoles(_req: Request, res: Response, _next: NextFunction
     return success(res, roles);
   } catch (error) {
     logger.error('获取角色列表失败', { error: (error as Error).message });
-    return Errors.internal(res);
+    return _next(error);
   }
 }

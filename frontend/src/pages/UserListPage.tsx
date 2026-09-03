@@ -6,7 +6,7 @@ import {
 import {
   PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined, KeyOutlined,
 } from '@ant-design/icons';
-import userStore from '../stores/userStore';
+import { useUserStore } from '../stores/userStore';
 import { User, UserStatus } from '../types/api';
 
 const { Title } = Typography;
@@ -23,7 +23,7 @@ const UserListPage: React.FC = () => {
   const {
     users, roles, loading, pagination,
     fetchUsers, fetchRoles, createUser, updateUser, deleteUser, resetPassword,
-  } = userStore();
+  } = useUserStore();
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | undefined>();
@@ -71,7 +71,7 @@ const UserListPage: React.FC = () => {
       form.resetFields();
       setEditingUser(null);
     } catch (e: any) {
-      message.error(e.message || '操作失败');
+      message.error(e.response?.data?.error?.message || e.message || '操作失败');
     }
   };
 
@@ -109,7 +109,7 @@ const UserListPage: React.FC = () => {
       pwdForm.resetFields();
       setPasswordUser(null);
     } catch (e: any) {
-      message.error(e.message || '密码重置失败');
+      message.error(e.response?.data?.error?.message || e.message || '密码重置失败');
     }
   };
 
@@ -118,7 +118,7 @@ const UserListPage: React.FC = () => {
       await deleteUser(id);
       message.success('用户已停用');
     } catch (e: any) {
-      message.error(e.message || '操作失败');
+      message.error(e.response?.data?.error?.message || e.message || '操作失败');
     }
   };
 

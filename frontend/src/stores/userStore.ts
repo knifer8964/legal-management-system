@@ -18,7 +18,7 @@ interface UserStore {
   resetPassword: (id: number, newPassword: string) => Promise<void>;
 }
 
-const userStore: UserStore = create((set, get) => ({
+export const useUserStore = create<UserStore>((set, get) => ({
   users: [],
   roles: [],
   loading: false,
@@ -62,5 +62,3 @@ const userStore: UserStore = create((set, get) => ({
     await resetUserPassword(id, newPassword);
   },
 }));
-
-export default userStore;
