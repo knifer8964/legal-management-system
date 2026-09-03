@@ -1,11 +1,22 @@
-M7: 用户管理与权限模块完成
+M8: 发票管理后端API完成（invoiceService/Controller/Routes + 冒烟测试8/8通过）
 
-- 后端：注册 /users 路由到 index.ts，修复 checkPermission 中间件支持数组格式权限(["*"],["module:*"])
-- 后端：修复 userRoutes.ts 中 /roles 路由顺序（必须在 /:id 之前）
-- 后端：新建 userService.ts 封装 CRUD/搜索/分页/角色查询/密码重置
-- 后端：8/8 冒烟测试全部通过（列表/详情/角色/创建/更新/重置密码/停用）
-- 前端：新建 UserListPage.tsx（用户列表+搜索+筛选+创建/编辑 Modal+重置密码 Modal+停用确认）
-- 前端：新建 userStore.ts（Zustand 状态管理）
-- 前端：修复 userService.ts 改用 http.ts（原 utils/request 已删除）
-- 前端：App.tsx 注册 /users 路由，AppLayout 添加用户管理菜单项
-- 前端：TypeScript 编译零错误
+新增文件:
+- backend/src/services/invoiceService.ts — 发票CRUD+搜索+分页+统计+关联计时+支付记录
+- backend/src/controllers/invoiceController.ts — 8个接口控制器
+- backend/src/routes/invoiceRoutes.ts — 路由注册(stats在:id前)
+- scripts/m8-smoke-test.js — M8冒烟测试脚本(8/8通过)
+
+修改:
+- backend/src/routes/index.ts — 注册 /invoices 路由
+
+接口清单:
+- GET /api/v1/invoices — 发票列表(分页+筛选+搜索)
+- POST /api/v1/invoices — 创建发票(自动生成发票编号)
+- GET /api/v1/invoices/:id — 发票详情
+- PUT /api/v1/invoices/:id — 更新发票
+- DELETE /api/v1/invoices/:id — 删除发票(解除计时关联)
+- GET /api/v1/invoices/stats — 发票统计
+- POST /api/v1/invoices/:id/link-time-entries — 关联计时记录
+- POST /api/v1/invoices/:id/payment — 记录支付
+
+虚拟团队首次并发协作: dev-cypher完成开发, tst-verity准备测试脚本
