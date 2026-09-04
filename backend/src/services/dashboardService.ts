@@ -1,4 +1,5 @@
-import { PrismaClient, MatterStatus, TaskStatus, ClientStatus } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+import { ClientStatus, MatterStatus, TaskStatus } from '../types/api';
 
 const prisma = new PrismaClient();
 

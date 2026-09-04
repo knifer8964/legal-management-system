@@ -1,4 +1,4 @@
-import { PrismaClient, ClientType, ClientStatus, MatterType, MatterStatus, FeeType, Priority, TaskStatus, InvoiceStatus, CommChannel, Direction, UserStatus } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -14,15 +14,15 @@ async function main() {
     data: {
       roleName: 'ADMIN',
       description: '系统管理员',
-      permissions: ['*'],
+      permissions: JSON.stringify(['*']),
     },
   });
 
-  const managerRole = await prisma.role.create({
+  await prisma.role.create({
     data: {
       roleName: 'MANAGER',
       description: '法务经理',
-      permissions: ['client:*', 'matter:*', 'invoice:*', 'report:*', 'settings:*'],
+      permissions: JSON.stringify(['client:*', 'matter:*', 'invoice:*', 'report:*', 'settings:*']),
     },
   });
 
@@ -30,7 +30,7 @@ async function main() {
     data: {
       roleName: 'LAWYER',
       description: '法务专员',
-      permissions: ['client:read', 'matter:*', 'document:*', 'time:write'],
+      permissions: JSON.stringify(['client:read', 'matter:*', 'document:*', 'time:write']),
     },
   });
 
@@ -38,7 +38,7 @@ async function main() {
     data: {
       roleName: 'ASSISTANT',
       description: '法务助理',
-      permissions: ['client:read', 'matter:read', 'task:*'],
+      permissions: JSON.stringify(['client:read', 'matter:read', 'task:*']),
     },
   });
 
@@ -61,7 +61,7 @@ async function main() {
       phone: '13800138000',
       roleId: adminRole.id,
       department: '管理部',
-      status: UserStatus.ACTIVE,
+      status: 'ACTIVE',
     },
   });
 
@@ -74,7 +74,7 @@ async function main() {
       phone: '13900139000',
       roleId: lawyerRole.id,
       department: '法务部',
-      status: UserStatus.ACTIVE,
+      status: 'ACTIVE',
     },
   });
 
@@ -87,7 +87,7 @@ async function main() {
       phone: '13700137000',
       roleId: assistantRole.id,
       department: '行政部',
-      status: UserStatus.ACTIVE,
+      status: 'ACTIVE',
     },
   });
 
@@ -100,36 +100,36 @@ async function main() {
 
   const personalClient1 = await prisma.client.create({
     data: {
-      clientType: ClientType.PERSONAL,
+      clientType: 'PERSONAL',
       name: '王小明',
       phone: '15012340001',
       email: 'wangxiaoming@email.com',
       gender: 'MALE',
       idNumber: '110101199001011234',
       address: '北京市朝阳区某小区',
-      tags: ['VIP', '老客户'],
+      tags: JSON.stringify(['VIP', '老客户']),
       source: '朋友推荐',
-      status: ClientStatus.ACTIVE,
+      status: 'ACTIVE',
     },
   });
 
   const personalClient2 = await prisma.client.create({
     data: {
-      clientType: ClientType.PERSONAL,
+      clientType: 'PERSONAL',
       name: '李女士',
       phone: '15012340002',
       email: 'lilishi@email.com',
       gender: 'FEMALE',
       address: '上海市浦东新区',
-      tags: ['新客户'],
+      tags: JSON.stringify(['新客户']),
       source: '网络咨询',
-      status: ClientStatus.ACTIVE,
+      status: 'ACTIVE',
     },
   });
 
   const enterpriseClient1 = await prisma.client.create({
     data: {
-      clientType: ClientType.ENTERPRISE,
+      clientType: 'ENTERPRISE',
       name: '北京创新科技有限公司',
       shortName: '创新科技',
       phone: '010-12345678',
@@ -148,15 +148,15 @@ async function main() {
       monthlyFee: 5000,
       serviceStart: new Date('2026-01-01'),
       serviceEnd: new Date('2027-01-01'),
-      tags: ['企业客户', '长期合作', '虚拟法务部'],
+      tags: JSON.stringify(['企业客户', '长期合作', '虚拟法务部']),
       source: '商务拓展',
-      status: ClientStatus.ACTIVE,
+      status: 'ACTIVE',
     },
   });
 
   const enterpriseClient2 = await prisma.client.create({
     data: {
-      clientType: ClientType.ENTERPRISE,
+      clientType: 'ENTERPRISE',
       name: '上海智远贸易有限公司',
       shortName: '智远贸易',
       phone: '021-87654321',
@@ -173,15 +173,15 @@ async function main() {
       monthlyFee: 3000,
       serviceStart: new Date('2026-04-01'),
       serviceEnd: new Date('2027-04-01'),
-      tags: ['企业客户', '虚拟法务部'],
+      tags: JSON.stringify(['企业客户', '虚拟法务部']),
       source: '行业推荐',
-      status: ClientStatus.ACTIVE,
+      status: 'ACTIVE',
     },
   });
 
-  const potentialClient = await prisma.client.create({
+  await prisma.client.create({
     data: {
-      clientType: ClientType.ENTERPRISE,
+      clientType: 'ENTERPRISE',
       name: '深圳鹏程物流有限公司',
       shortName: '鹏程物流',
       phone: '0755-12345678',
@@ -190,9 +190,9 @@ async function main() {
       legalRep: '王总',
       industry: '物流',
       scale: '中型',
-      tags: ['潜在客户'],
+      tags: JSON.stringify(['潜在客户']),
       source: '展会名片',
-      status: ClientStatus.POTENTIAL,
+      status: 'POTENTIAL',
     },
   });
 
@@ -207,13 +207,13 @@ async function main() {
   const contractReview1 = await prisma.matter.create({
     data: {
       matterNo: 'MT-2026-001',
-      matterType: MatterType.CONTRACT_REVIEW,
+      matterType: 'CONTRACT_REVIEW',
       title: '房屋租赁合同审查',
       description: '审查房东提供的租赁合同，识别风险条款',
       clientId: personalClient1.id,
-      status: MatterStatus.IN_PROGRESS,
-      priority: Priority.HIGH,
-      feeType: FeeType.FIXED,
+      status: 'IN_PROGRESS',
+      priority: 'HIGH',
+      feeType: 'FIXED',
       feeAmount: 2000,
       totalAmount: 2000,
       paidAmount: 1000,
@@ -230,13 +230,13 @@ async function main() {
   const litigationCase = await prisma.matter.create({
     data: {
       matterNo: 'MT-2026-002',
-      matterType: MatterType.CASE_LITIGATION,
+      matterType: 'CASE_LITIGATION',
       title: '供应商合同纠纷诉讼',
       description: '某供应商拖欠货款，需提起诉讼追讨',
       clientId: enterpriseClient1.id,
-      status: MatterStatus.IN_PROGRESS,
-      priority: Priority.URGENT,
-      feeType: FeeType.CONTINGENCY,
+      status: 'IN_PROGRESS',
+      priority: 'URGENT',
+      feeType: 'CONTINGENCY',
       feeAmount: 50000,
       totalAmount: 150000,
       paidAmount: 0,
@@ -246,12 +246,12 @@ async function main() {
       nextAction: '准备起诉材料，7月20日前提交',
       assigneeId: lawyerUser.id,
       createdById: lawyerUser.id,
-      metadata: {
+      metadata: JSON.stringify({
         court: '北京市朝阳区人民法院',
         caseNumber: '2026朝法民初12345号',
         defendant: '深圳市某科技有限公司',
         claimAmount: 500000,
-      },
+      }),
     },
   });
 
@@ -259,13 +259,13 @@ async function main() {
   const consultation = await prisma.matter.create({
     data: {
       matterNo: 'MT-2026-003',
-      matterType: MatterType.CONSULTATION,
+      matterType: 'CONSULTATION',
       title: '婚姻财产法律咨询',
       description: '离婚案件财产分割咨询',
       clientId: personalClient2.id,
-      status: MatterStatus.COMPLETED,
-      priority: Priority.MEDIUM,
-      feeType: FeeType.HOURLY,
+      status: 'COMPLETED',
+      priority: 'MEDIUM',
+      feeType: 'HOURLY',
       feeAmount: 500,
       hourlyRate: 500,
       totalAmount: 1500,
@@ -282,13 +282,13 @@ async function main() {
   const complianceMatter = await prisma.matter.create({
     data: {
       matterNo: 'MT-2026-004',
-      matterType: MatterType.COMPLIANCE,
+      matterType: 'COMPLIANCE',
       title: '劳动合规体系建设',
       description: '协助企业完善劳动人事规章制度',
       clientId: enterpriseClient2.id,
-      status: MatterStatus.IN_PROGRESS,
-      priority: Priority.MEDIUM,
-      feeType: FeeType.MONTHLY,
+      status: 'IN_PROGRESS',
+      priority: 'MEDIUM',
+      feeType: 'MONTHLY',
       feeAmount: 3000,
       totalAmount: 9000,
       paidAmount: 3000,
@@ -302,16 +302,16 @@ async function main() {
   });
 
   // 合同起草 - 创新科技
-  const contractDraft = await prisma.matter.create({
+  await prisma.matter.create({
     data: {
       matterNo: 'MT-2026-005',
-      matterType: MatterType.CONTRACT_DRAFT,
+      matterType: 'CONTRACT_DRAFT',
       title: '技术秘密保护协议起草',
       description: '为技术部门起草保密协议和竞业限制协议',
       clientId: enterpriseClient1.id,
-      status: MatterStatus.PENDING,
-      priority: Priority.MEDIUM,
-      feeType: FeeType.FIXED,
+      status: 'PENDING',
+      priority: 'MEDIUM',
+      feeType: 'FIXED',
       feeAmount: 3000,
       totalAmount: 3000,
       paidAmount: 0,
@@ -338,8 +338,8 @@ async function main() {
         userId: lawyerUser.id,
         title: '完成合同风险清单整理',
         description: '列出所有需要修改的条款',
-        status: TaskStatus.IN_PROGRESS,
-        priority: Priority.HIGH,
+        status: 'IN_PROGRESS',
+        priority: 'HIGH',
         dueDate: new Date('2026-07-08'),
       },
       {
@@ -347,8 +347,8 @@ async function main() {
         userId: assistantUser.id,
         title: '收集类似判例',
         description: '查找类似租赁纠纷案例供参考',
-        status: TaskStatus.TODO,
-        priority: Priority.MEDIUM,
+        status: 'TODO',
+        priority: 'MEDIUM',
         dueDate: new Date('2026-07-09'),
       },
       {
@@ -356,8 +356,8 @@ async function main() {
         userId: lawyerUser.id,
         title: '起草民事起诉状',
         description: '按照法院模板起草起诉状',
-        status: TaskStatus.IN_PROGRESS,
-        priority: Priority.URGENT,
+        status: 'IN_PROGRESS',
+        priority: 'URGENT',
         dueDate: new Date('2026-07-18'),
       },
       {
@@ -365,8 +365,8 @@ async function main() {
         userId: assistantUser.id,
         title: '整理证据材料清单',
         description: '收集合同、送货单、对账单等',
-        status: TaskStatus.DONE,
-        priority: Priority.HIGH,
+        status: 'DONE',
+        priority: 'HIGH',
         dueDate: new Date('2026-07-15'),
         completedAt: new Date('2026-07-14'),
       },
@@ -374,8 +374,8 @@ async function main() {
         userId: lawyerUser.id,
         title: '回复李女士咨询邮件',
         description: '关于离婚财产分割的补充问题',
-        status: TaskStatus.DONE,
-        priority: Priority.MEDIUM,
+        status: 'DONE',
+        priority: 'MEDIUM',
         dueDate: new Date('2026-07-06'),
         completedAt: new Date('2026-07-05'),
       },
@@ -453,7 +453,7 @@ async function main() {
   // ============================================
   console.log('💰 创建发票...');
 
-  const invoice1 = await prisma.invoice.create({
+  await prisma.invoice.create({
     data: {
       invoiceNo: 'INV-2026-001',
       clientId: personalClient1.id,
@@ -464,7 +464,7 @@ async function main() {
       taxAmount: 120,
       totalAmount: 2120,
       paidAmount: 1000,
-      status: InvoiceStatus.PARTIAL,
+      status: 'PARTIAL',
       issueDate: new Date('2026-07-03'),
       dueDate: new Date('2026-07-31'),
       items: JSON.stringify([
@@ -473,7 +473,7 @@ async function main() {
     },
   });
 
-  const invoice2 = await prisma.invoice.create({
+  await prisma.invoice.create({
     data: {
       invoiceNo: 'INV-2026-002',
       clientId: enterpriseClient2.id,
@@ -484,7 +484,7 @@ async function main() {
       taxAmount: 180,
       totalAmount: 3180,
       paidAmount: 3180,
-      status: InvoiceStatus.PAID,
+      status: 'PAID',
       issueDate: new Date('2026-04-01'),
       dueDate: new Date('2026-04-15'),
       paidAt: new Date('2026-04-10'),
@@ -507,8 +507,8 @@ async function main() {
         clientId: personalClient1.id,
         matterId: contractReview1.id,
         userId: lawyerUser.id,
-        channel: CommChannel.PHONE,
-        direction: Direction.INBOUND,
+        channel: 'PHONE',
+        direction: 'INBOUND',
         content: '客户来电咨询合同问题，约定了面谈时间',
         contactName: '王小明',
         contactInfo: '15012340001',
@@ -519,8 +519,8 @@ async function main() {
         clientId: personalClient1.id,
         matterId: contractReview1.id,
         userId: lawyerUser.id,
-        channel: CommChannel.MEETING,
-        direction: Direction.INBOUND,
+        channel: 'MEETING',
+        direction: 'INBOUND',
         content: '当面沟通，详细了解租赁房屋情况、房东信息、特殊需求等',
         contactName: '王小明',
         contactInfo: '北京市朝阳区某咖啡厅',
@@ -531,8 +531,8 @@ async function main() {
         clientId: enterpriseClient1.id,
         matterId: litigationCase.id,
         userId: lawyerUser.id,
-        channel: CommChannel.EMAIL,
-        direction: Direction.OUTBOUND,
+        channel: 'EMAIL',
+        direction: 'OUTBOUND',
         subject: '诉讼材料准备清单',
         content: '请贵司准备以下材料：1.采购合同原件...',
         contactName: '张经理',
@@ -546,8 +546,8 @@ async function main() {
         clientId: enterpriseClient2.id,
         matterId: complianceMatter.id,
         userId: lawyerUser.id,
-        channel: CommChannel.WECHAT,
-        direction: Direction.OUTBOUND,
+        channel: 'WECHAT',
+        direction: 'OUTBOUND',
         content: '劳动制度初稿已发至您的邮箱，请查收',
         contactName: '周小姐',
         contactWechat: 'zhouxiaojie_zy',

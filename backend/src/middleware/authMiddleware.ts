@@ -97,7 +97,13 @@ export function checkPermission(requiredPermission: string) {
         });
       }
       
-      const permissions = dbUser.role.permissions;
+      const permissions: any = (() => {
+        const raw = dbUser.role.permissions;
+        if (typeof raw === 'string') {
+          try { return JSON.parse(raw); } catch { return null; }
+        }
+        return raw;
+      })();
       
       // 通配权限 ["*"] 或 { all: true } — 管理员拥有所有权限
       if (Array.isArray(permissions) && permissions.includes('*')) {

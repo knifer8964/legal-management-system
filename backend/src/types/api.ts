@@ -2,19 +2,109 @@
 // 个人法务工作室管理系统 - API 类型定义
 // =====================================================
 
-import {
-  ClientType,
-  ClientStatus,
-  MatterType,
-  MatterStatus,
-  FeeType,
-  Priority,
-  TaskStatus,
-  InvoiceStatus,
-  CommChannel,
-  Direction,
-  UserStatus,
-} from '@prisma/client';
+// =====================================================
+// 枚举常量 (SQLite 迁移后由字符串常量替代 Prisma enum)
+// =====================================================
+
+export const UserStatus = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+  LOCKED: 'LOCKED',
+} as const;
+export type UserStatus = (typeof UserStatus)[keyof typeof UserStatus];
+
+export const ClientType = {
+  PERSONAL: 'PERSONAL',
+  ENTERPRISE: 'ENTERPRISE',
+} as const;
+export type ClientType = (typeof ClientType)[keyof typeof ClientType];
+
+export const ClientStatus = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+  POTENTIAL: 'POTENTIAL',
+  CLOSED: 'CLOSED',
+} as const;
+export type ClientStatus = (typeof ClientStatus)[keyof typeof ClientStatus];
+
+export const MatterType = {
+  CONSULTATION: 'CONSULTATION',
+  CONTRACT_REVIEW: 'CONTRACT_REVIEW',
+  CONTRACT_DRAFT: 'CONTRACT_DRAFT',
+  CASE_LITIGATION: 'CASE_LITIGATION',
+  CASE_ARBITRATION: 'CASE_ARBITRATION',
+  CASE_MEDIATION: 'CASE_MEDIATION',
+  COMPLIANCE: 'COMPLIANCE',
+  TRAINING: 'TRAINING',
+  DOCUMENT_DRAFT: 'DOCUMENT_DRAFT',
+  OTHER: 'OTHER',
+} as const;
+export type MatterType = (typeof MatterType)[keyof typeof MatterType];
+
+export const MatterStatus = {
+  PENDING: 'PENDING',
+  IN_PROGRESS: 'IN_PROGRESS',
+  WAITING_CLIENT: 'WAITING_CLIENT',
+  REVIEWING: 'REVIEWING',
+  COMPLETED: 'COMPLETED',
+  ARCHIVED: 'ARCHIVED',
+  CANCELLED: 'CANCELLED',
+} as const;
+export type MatterStatus = (typeof MatterStatus)[keyof typeof MatterStatus];
+
+export const FeeType = {
+  FIXED: 'FIXED',
+  HOURLY: 'HOURLY',
+  CONTINGENCY: 'CONTINGENCY',
+  MONTHLY: 'MONTHLY',
+  FREE: 'FREE',
+} as const;
+export type FeeType = (typeof FeeType)[keyof typeof FeeType];
+
+export const Priority = {
+  LOW: 'LOW',
+  MEDIUM: 'MEDIUM',
+  HIGH: 'HIGH',
+  URGENT: 'URGENT',
+} as const;
+export type Priority = (typeof Priority)[keyof typeof Priority];
+
+export const TaskStatus = {
+  TODO: 'TODO',
+  IN_PROGRESS: 'IN_PROGRESS',
+  DONE: 'DONE',
+  CANCELLED: 'CANCELLED',
+} as const;
+export type TaskStatus = (typeof TaskStatus)[keyof typeof TaskStatus];
+
+export const InvoiceStatus = {
+  DRAFT: 'DRAFT',
+  ISSUED: 'ISSUED',
+  SENT: 'SENT',
+  PARTIAL: 'PARTIAL',
+  PAID: 'PAID',
+  OVERDUE: 'OVERDUE',
+  CANCELLED: 'CANCELLED',
+} as const;
+export type InvoiceStatus = (typeof InvoiceStatus)[keyof typeof InvoiceStatus];
+
+export const CommChannel = {
+  WECHAT: 'WECHAT',
+  EMAIL: 'EMAIL',
+  SMS: 'SMS',
+  PHONE: 'PHONE',
+  MEETING: 'MEETING',
+  VIDEO: 'VIDEO',
+  SYSTEM: 'SYSTEM',
+  OTHER: 'OTHER',
+} as const;
+export type CommChannel = (typeof CommChannel)[keyof typeof CommChannel];
+
+export const Direction = {
+  INBOUND: 'INBOUND',
+  OUTBOUND: 'OUTBOUND',
+} as const;
+export type Direction = (typeof Direction)[keyof typeof Direction];
 
 // =====================================================
 // 通用类型

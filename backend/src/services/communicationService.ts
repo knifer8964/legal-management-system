@@ -28,9 +28,9 @@ export class CommunicationService {
         contactInfo: data.contactInfo || null,
         contactWechat: data.contactWechat || null,
         fromAddr: data.fromAddr || null,
-        toAddrs: data.toAddrs || undefined,
-        ccAddrs: data.ccAddrs || undefined,
-        attachments: data.attachments || undefined,
+        toAddrs: data.toAddrs ? JSON.stringify(data.toAddrs) : null,
+        ccAddrs: data.ccAddrs ? JSON.stringify(data.ccAddrs) : null,
+        attachments: data.attachments ? JSON.stringify(data.attachments) : null,
         externalId: data.externalId || null,
         threadId: data.threadId || null,
         sentAt: data.sentAt ? new Date(data.sentAt) : new Date(),
@@ -165,8 +165,19 @@ export class CommunicationService {
   }
 
   private format(comm: any): Communication {
+    const parseJson = (v: any) => {
+      if (v === null || v === undefined) return null;
+      if (typeof v === 'string') {
+        try { return JSON.parse(v); } catch { return v; }
+      }
+      return v;
+    };
+
     return {
       ...comm,
+      toAddrs: parseJson(comm.toAddrs),
+      ccAddrs: parseJson(comm.ccAddrs),
+      attachments: parseJson(comm.attachments),
       sentAt: comm.sentAt.toISOString(),
       readAt: comm.readAt?.toISOString() || null,
       createdAt: comm.createdAt.toISOString(),

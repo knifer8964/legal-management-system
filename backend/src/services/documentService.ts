@@ -27,7 +27,7 @@ export class DocumentService {
         matterId: data.matterId || null,
         uploaderId: userId || null,
         category: data.category || null,
-        tags: data.tags ?? undefined,
+        tags: data.tags ? JSON.stringify(data.tags) : null,
         description: data.description || null,
       },
       include: { client: true, matter: true },
@@ -46,7 +46,7 @@ export class DocumentService {
     if (data.clientId !== undefined) updateData.clientId = data.clientId || null;
     if (data.matterId !== undefined) updateData.matterId = data.matterId || null;
     if (data.category !== undefined) updateData.category = data.category || null;
-    if (data.tags !== undefined) updateData.tags = data.tags ?? Prisma.JsonNull;
+    if (data.tags !== undefined) updateData.tags = data.tags ? JSON.stringify(data.tags) : null;
     if (data.description !== undefined) updateData.description = data.description || null;
 
     const updated = await prisma.document.update({
@@ -162,6 +162,9 @@ export class DocumentService {
   private format(doc: any): Document {
     return {
       ...doc,
+      tags: doc.tags
+        ? (typeof doc.tags === 'string' ? (() => { try { return JSON.parse(doc.tags); } catch { return doc.tags; } })() : doc.tags)
+        : null,
       fileSize: Number(doc.fileSize),
       createdAt: doc.createdAt.toISOString(),
       client: doc.client

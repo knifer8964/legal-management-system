@@ -1,13 +1,12 @@
 // 公司法务智慧管理系统 - 后端入口文件
 // 创建时间: 2026-05-28
-// 技术栈: Node.js + Express + TypeScript + Prisma
+// 技术栈: Node.js + Express + TypeScript + Prisma + SQLite
 
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
-import { createClient } from 'redis';
 import winston from 'winston';
 import rateLimit from 'express-rate-limit';
 import { errorHandler, notFoundHandler, requestTracker, requestLogger } from './middleware';
@@ -18,21 +17,6 @@ dotenv.config();
 
 // 初始化 Prisma 客户端
 export const prisma = new PrismaClient();
-
-// 初始化 Redis 客户端（可选，失败时降级）
-export const redisClient = createClient({
-  url: process.env.REDIS_URL || 'redis://localhost:6379'
-});
-
-let redisConnected = false;
-let redisErrorLogged = false;
-
-redisClient.on('error', (err) => {
-  if (!redisErrorLogged) {
-    console.warn('⚠️ Redis 连接失败，将使用内存缓存:', err.message || '连接被拒绝');
-    redisErrorLogged = true;
-  }
-});
 
 // 初始化 Winston 日志
 export const logger = winston.createLogger({
@@ -55,7 +39,7 @@ const app: Express = express();
 const PORT = process.env.PORT || 3000;
 
 // 中间件配置
-app.use(helmet()); // 安全头
+app.use(helmet());
 app.use(cors({
   origin: process.env.CORS_ORIGIN?.split(',') || 'http://localhost:5173',
   credentials: true
@@ -69,16 +53,16 @@ app.use(requestLogger);
 
 // 登录接口严格限流（防暴力破解）
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 分钟窗口
-  max: 10, // 每个 IP 每 15 分钟最多 10 次登录尝试
+  windowMs: 15 * 60 * 1000,
+  max: 10,
   message: { success: false, error: { code: 'TOO_MANY_REQUESTS', message: '登录尝试过于频繁，请 15 分钟后再试' } },
-  skipSuccessfulRequests: true, // 成功的请求不计数
+  skipSuccessfulRequests: true,
 });
 
-// 通用限流（开发环境放宽）
+// 通用限流
 const limiter = rateLimit({
-  windowMs: 60 * 1000, // 1 分钟窗口
-  max: 600, // 每个 IP 每分钟 600 次请求
+  windowMs: 60 * 1000,
+  max: 600,
   message: '请求过于频繁，请稍后再试',
 });
 app.use('/api/v1/auth/login', loginLimiter);
@@ -104,33 +88,18 @@ app.use(errorHandler);
 // 启动服务器
 async function startServer() {
   try {
-    // 尝试连接 Redis（可选）
-    try {
-      await Promise.race([
-        redisClient.connect(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Redis connection timeout')), 3000))
-      ]);
-      redisConnected = true;
-      logger.info('✅ Redis 连接成功');
-    } catch (redisErr) {
-      console.warn('⚠️ Redis 连接失败，继续启动服务器（不使用 Redis 缓存）');
-      logger.warn('Redis 连接失败，将使用降级模式', { error: (redisErr as Error).message });
-      // 移除错误监听器，避免持续打印
-      redisClient.removeAllListeners('error');
-    }
-    
     // 测试数据库连接
     await prisma.$connect();
-    logger.info('✅ 数据库连接成功');
+    logger.info('✅ 数据库连接成功 (SQLite)');
     
     // 启动 HTTP 服务器
     app.listen(PORT, () => {
-      logger.info(`🚀 服务器启动成功`, {
+      logger.info('🚀 服务器启动成功', {
         port: PORT,
         environment: process.env.NODE_ENV || 'development',
         pid: process.pid
       });
-      console.log(`✅ 公司法务智慧管理系统后端已启动`);
+      console.log('✅ 公司法务智慧管理系统后端已启动');
       console.log(`   - 环境: ${process.env.NODE_ENV || 'development'}`);
       console.log(`   - 端口: ${PORT}`);
       console.log(`   - API文档: http://localhost:${PORT}/api/v1`);
@@ -143,31 +112,14 @@ async function startServer() {
 }
 
 // 优雅退出
-process.on('SIGTERM', async () => {
-  logger.info('SIGTERM 信号接收，准备关闭服务器...');
+async function gracefulShutdown(signal: string) {
+  logger.info(`${signal} 信号接收，准备关闭服务器...`);
   await prisma.$disconnect();
-  if (redisConnected) {
-    try {
-      await redisClient.quit();
-    } catch (e) {
-      // ignore
-    }
-  }
   process.exit(0);
-});
+}
 
-process.on('SIGINT', async () => {
-  logger.info('SIGINT 信号接收，准备关闭服务器...');
-  await prisma.$disconnect();
-  if (redisConnected) {
-    try {
-      await redisClient.quit();
-    } catch (e) {
-      // ignore
-    }
-  }
-  process.exit(0);
-});
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 // 启动
 startServer();

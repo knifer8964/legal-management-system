@@ -2,13 +2,14 @@
 // 发票管理服务 (M8)
 // =====================================================
 
-import { PrismaClient, Prisma, InvoiceStatus } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import {
   CreateInvoiceDto,
   UpdateInvoiceDto,
   InvoiceQueryParams,
   Invoice,
   Payment,
+  InvoiceStatus,
 } from '../types/api';
 
 const prisma = new PrismaClient();
@@ -277,7 +278,7 @@ export class InvoiceService {
     const newPaidAmount = Number(invoice.paidAmount) + amount;
     const totalAmount = Number(invoice.totalAmount);
 
-    let newStatus: InvoiceStatus = invoice.status;
+    let newStatus: string = invoice.status;
     let paidAt: Date | null = invoice.paidAt;
 
     if (newPaidAmount >= totalAmount) {
@@ -322,8 +323,17 @@ export class InvoiceService {
   }
 
   private format(inv: any): Invoice {
+    const parseJson = (v: any) => {
+      if (v === null || v === undefined) return null;
+      if (typeof v === 'string') {
+        try { return JSON.parse(v); } catch { return v; }
+      }
+      return v;
+    };
+
     return {
       ...inv,
+      items: parseJson(inv.items),
       subtotal: Number(inv.subtotal),
       taxRate: Number(inv.taxRate),
       taxAmount: Number(inv.taxAmount),

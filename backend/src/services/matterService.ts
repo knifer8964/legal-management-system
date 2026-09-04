@@ -2,8 +2,8 @@
 // 业务事项管理服务 - 业务逻辑层
 // =====================================================
 
-import { PrismaClient, Prisma, MatterType, MatterStatus } from '@prisma/client';
-import { CreateMatterDto, MatterQueryParams, Matter } from '../types/api';
+import { PrismaClient, Prisma } from '@prisma/client';
+import { CreateMatterDto, MatterQueryParams, Matter, MatterType, MatterStatus } from '../types/api';
 
 const prisma = new PrismaClient();
 
@@ -31,7 +31,7 @@ export class MatterService {
           deadline: data.deadline ? new Date(data.deadline) : null,
           assigneeId: data.assigneeId || null,
           createdById: userId,
-          metadata: data.metadata || undefined,
+          metadata: data.metadata ? JSON.stringify(data.metadata) : null,
         },
         include: {
           client: true,
@@ -333,6 +333,9 @@ export class MatterService {
   private formatMatter(matter: any): Matter {
     return {
       ...matter,
+      metadata: matter.metadata
+        ? (typeof matter.metadata === 'string' ? (() => { try { return JSON.parse(matter.metadata); } catch { return matter.metadata; } })() : matter.metadata)
+        : null,
       feeAmount: matter.feeAmount ? Number(matter.feeAmount) : null,
       hourlyRate: matter.hourlyRate ? Number(matter.hourlyRate) : null,
       totalAmount: Number(matter.totalAmount),

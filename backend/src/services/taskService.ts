@@ -2,8 +2,8 @@
 // 任务管理服务 - 业务逻辑层
 // =====================================================
 
-import { PrismaClient, Prisma, TaskStatus } from '@prisma/client';
-import { CreateTaskDto, UpdateTaskDto, TaskQueryParams, Task } from '../types/api';
+import { PrismaClient, Prisma } from '@prisma/client';
+import { CreateTaskDto, UpdateTaskDto, TaskQueryParams, Task, TaskStatus } from '../types/api';
 
 const prisma = new PrismaClient();
 

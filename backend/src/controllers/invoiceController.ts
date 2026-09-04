@@ -5,7 +5,7 @@
 import { Request, Response, NextFunction } from 'express';
 import invoiceService from '../services/invoiceService';
 import { success, Errors } from '../utils/responseUtil';
-import { InvoiceStatus } from '@prisma/client';
+import { InvoiceStatus } from '../types/api';
 
 export class InvoiceController {
   // 创建发票

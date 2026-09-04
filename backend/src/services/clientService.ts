@@ -2,8 +2,8 @@
 // 客户管理服务 - 业务逻辑层
 // =====================================================
 
-import { PrismaClient, Prisma, ClientType, ClientStatus } from '@prisma/client';
-import { CreateClientDto, UpdateClientDto, ClientQueryParams, Client, PaginatedResponse } from '../types/api';
+import { PrismaClient, Prisma } from '@prisma/client';
+import { CreateClientDto, UpdateClientDto, ClientQueryParams, Client, PaginatedResponse, ClientType, ClientStatus } from '../types/api';
 
 const prisma = new PrismaClient();
 

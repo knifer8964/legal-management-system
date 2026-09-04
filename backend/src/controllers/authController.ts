@@ -15,15 +15,38 @@ const JWT_SECRET = process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRE
 // 将权限对象转换为权限代码数组
 function extractPermissionCodes(permissions: any): string[] {
   if (!permissions) return [];
-  
+
+  // SQLite 迁移后 permissions 以 JSON 字符串存储，需先解析
+  let parsed = permissions;
+  if (typeof permissions === 'string') {
+    try {
+      parsed = JSON.parse(permissions);
+    } catch {
+      return [];
+    }
+  }
+
   const codes: string[] = [];
-  for (const [module, actions] of Object.entries(permissions)) {
-    if (Array.isArray(actions)) {
-      for (const action of actions) {
-        codes.push(`${module}:${action}`);
+
+  // 数组格式: ['client:*', 'matter:read', '*']
+  if (Array.isArray(parsed)) {
+    for (const perm of parsed) {
+      if (typeof perm === 'string') codes.push(perm);
+    }
+    return codes;
+  }
+
+  // 对象格式: { client: ['read', 'write'], ... }
+  if (parsed && typeof parsed === 'object') {
+    for (const [module, actions] of Object.entries(parsed)) {
+      if (Array.isArray(actions)) {
+        for (const action of actions) {
+          codes.push(`${module}:${action}`);
+        }
       }
     }
   }
+
   return codes;
 }
 

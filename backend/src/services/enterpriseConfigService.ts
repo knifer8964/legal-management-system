@@ -68,11 +68,11 @@ export class EnterpriseConfigService {
         wecomCorpId: data.wecomCorpId || null,
         wecomAgentId: data.wecomAgentId || null,
         wecomSecret: data.wecomSecret || null,
-        members: (data.members as unknown as Prisma.InputJsonValue) ?? undefined,
+        members: data.members ? JSON.stringify(data.members) : null,
         portalTitle: data.portalTitle || null,
         portalLogo: data.portalLogo || null,
         portalTheme: data.portalTheme || null,
-        customFields: data.customFields ?? undefined,
+        customFields: data.customFields ? JSON.stringify(data.customFields) : null,
       },
       include: { client: true },
     });
@@ -99,11 +99,11 @@ export class EnterpriseConfigService {
     if (data.wecomCorpId !== undefined) updateData.wecomCorpId = data.wecomCorpId || null;
     if (data.wecomAgentId !== undefined) updateData.wecomAgentId = data.wecomAgentId || null;
     if (data.wecomSecret !== undefined) updateData.wecomSecret = data.wecomSecret || null;
-    if (data.members !== undefined) updateData.members = (data.members as unknown as Prisma.InputJsonValue) ?? Prisma.JsonNull;
+    if (data.members !== undefined) updateData.members = data.members ? JSON.stringify(data.members) : null;
     if (data.portalTitle !== undefined) updateData.portalTitle = data.portalTitle || null;
     if (data.portalLogo !== undefined) updateData.portalLogo = data.portalLogo || null;
     if (data.portalTheme !== undefined) updateData.portalTheme = data.portalTheme || null;
-    if (data.customFields !== undefined) updateData.customFields = (data.customFields as unknown as Prisma.InputJsonValue) ?? Prisma.JsonNull;
+    if (data.customFields !== undefined) updateData.customFields = data.customFields ? JSON.stringify(data.customFields) : null;
 
     const config = await prisma.enterpriseConfig.update({
       where: { id },
@@ -143,7 +143,7 @@ export class EnterpriseConfigService {
 
     await prisma.enterpriseConfig.update({
       where: { clientId },
-      data: { members: members as unknown as Prisma.InputJsonValue },
+      data: { members: JSON.stringify(members) },
     });
 
     return members;
@@ -165,7 +165,7 @@ export class EnterpriseConfigService {
 
     await prisma.enterpriseConfig.update({
       where: { clientId },
-      data: { members: members as unknown as Prisma.InputJsonValue },
+      data: { members: JSON.stringify(members) },
     });
 
     return members;
@@ -192,9 +192,18 @@ export class EnterpriseConfigService {
     return {
       ...config,
       members: this.normalizeMembers(config.members),
+      customFields: this.normalizeJson(config.customFields),
       createdAt: config.createdAt.toISOString(),
       updatedAt: config.updatedAt.toISOString(),
     };
+  }
+
+  private normalizeJson(v: any): any {
+    if (v === null || v === undefined) return null;
+    if (typeof v === 'string') {
+      try { return JSON.parse(v); } catch { return v; }
+    }
+    return v;
   }
 }
 
