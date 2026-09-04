@@ -7,7 +7,7 @@ import {
   PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined, KeyOutlined,
 } from '@ant-design/icons';
 import { useUserStore } from '../stores/userStore';
-import { User, UserStatus } from '../types/api';
+import { User } from '../types/api';
 
 const { Title } = Typography;
 const { Option } = Select;

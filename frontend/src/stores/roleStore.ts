@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import {
-  getRoles, getRoleById, createRole, updateRole, deleteRole, getRoleUsers,
+  getRoles, createRole, updateRole, deleteRole, getRoleUsers,
 } from '../services/roleService';
 import { Role, User } from '../types/api';
 

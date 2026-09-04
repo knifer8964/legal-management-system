@@ -1,19 +1,18 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  Row, Col, Card, Statistic, List, Tag, Typography, Space, Spin, Empty, Progress, Tooltip,
+  Row, Col, Card, Statistic, List, Tag, Typography, Space, Spin, Empty, Progress,
 } from 'antd';
 import {
   TeamOutlined, FolderOpenOutlined, CheckSquareOutlined,
-  ClockCircleOutlined, FileTextOutlined, DollarOutlined, FolderOutlined,
+  ClockCircleOutlined, DollarOutlined, FolderOutlined,
   AlertOutlined, ExclamationCircleOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip as RTooltip, ResponsiveContainer, Legend,
+  Tooltip as RTooltip, ResponsiveContainer,
 } from 'recharts';
 import { dashboardService, DashboardSummary } from '../services/dashboardService';
-import { Priority } from '../types/api';
 
 const { Title, Text } = Typography;
 
@@ -75,7 +74,7 @@ const DashboardPage: React.FC = () => {
   }
 
   // 图表数据
-  const matterPieData = Object.entries(data.matters.byStatus).map(([k, v], i) => ({
+  const matterPieData = Object.entries(data.matters.byStatus).map(([k, v]) => ({
     name: matterStatusLabels[k] || k, value: v, key: k,
   }));
   const taskBarData = Object.entries(data.tasks.byStatus).map(([k, v]) => ({

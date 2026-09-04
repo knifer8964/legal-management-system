@@ -1,34 +1,28 @@
-需求缺口全量修复: RBAC+角色管理+任务完善+发票付款明细+文档上传+虚拟法务部+客户服务计划
+SQLite迁移: MySQL→SQLite + 移除Redis依赖
 
-## RBAC 角色管理 (fix-rbac-role-mgmt)
-- 新增 roleService/roleController/roleRoutes (6端点: CRUD+角色用户列表)
-- 新增 RoleListPage 前端页面 + roleService/roleStore
-- 7个路由模块挂载 checkPermission (clients/matters/tasks/communications/time-entries/invoices/documents)
+## 数据库迁移
+- Prisma provider: mysql → sqlite
+- DATABASE_URL: mysql://... → file:./dev.db
+- 移除所有 @db.* 类型注解（VarChar/Text/Decimal/DateTime/Date）
+- 12个 Json? 字段 → String?（JSON序列化为字符串存储）
+- 12个 enum 字段 → String（含 @default 改为字符串字面量）
+- 删除 11 个 enum 块（UserStatus/ClientType/ClientStatus/MatterType/MatterStatus/FeeType/Priority/CommChannel/Direction/TaskStatus/InvoiceStatus）
+- 新增 SQLite 迁移: 20260904014908_init_sqlite
 
-## 任务管理完善 (fix-task-invoice-client)
-- taskService.create 支持指定 userId (不再硬编码当前用户)
-- TaskBoardPage 改为4列看板 (待办/进行中/已完成/已取消)
-- 创建/编辑表单新增负责人选择框
+## 代码适配
+- backend/src/types/api.ts: enum 导入改为字符串常量对象 + 类型别名（保持 XxxType.VALUE 用法兼容）
+- 12个 service/controller 文件: enum 导入源从 @prisma/client 改为 ../types/api
+- JSON 字段: 写入时 JSON.stringify，读取时 JSON.parse 还原
+- authMiddleware/authController: role.permissions 现为 JSON 字符串，读取时先解析
+- seed.ts: enum 值改为字符串字面量，JSON 字段改为 JSON.stringify
 
-## 发票付款明细
-- Prisma 新增 Payment 模型 + 迁移
-- invoiceService.recordPayment 改为事务内同时创建 Payment 记录
-- 新增 GET /:id/payments 端点
-- InvoiceListPage 支付弹窗新增付款记录历史展示
+## Redis 移除
+- backend/src/index.ts: 移除 redis 导入和连接逻辑
+- backend/package.json: 移除 redis 和 mysql2 依赖
 
-## 客户服务计划前端
-- ClientListPage 表单新增 servicePlan/monthlyFee/serviceStart/serviceEnd 字段
-- 详情 Drawer 同步展示
-
-## 文档真实文件上传 (fix-doc-upload-virtual-legal)
-- documentRoutes 挂载 uploadDocument multer 中间件
-- documentController 新增 upload/download 方法
-- DocumentListPage 改为真实文件上传 (Ant Design Upload Dragger)
-- 新增文件下载按钮
-
-## 虚拟法务部 API
-- 新增 enterpriseConfigService/enterpriseConfigController/enterpriseConfigRoutes (7端点)
-- 前端新增 enterpriseConfigService/enterpriseConfigStore
-- types/api.ts 新增 EnterpriseConfig/EnterpriseMember 类型
-
-编译: 后端 tsc --noEmit 零错误 | 前端 tsc --noEmit 零错误
+## 验证
+- 后端 tsc --noEmit: 零错误
+- 前端 tsc --noEmit: 零错误
+- prisma validate: 通过
+- prisma migrate reset --force + seed: 成功（4角色/3用户/5客户/5业务/5任务/4计时/2发票/4沟通/2企业配置/5时间线/3日志）
+- 8/8 接口冒烟测试通过: Dashboard/Clients/Matters/Tasks/Invoices/Documents/Roles/Users

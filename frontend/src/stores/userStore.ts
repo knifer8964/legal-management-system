@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import {
-  getUsers, getUserById, createUser, updateUser, deleteUser, resetUserPassword, getRoles
+  getUsers, createUser, updateUser, deleteUser, resetUserPassword, getRoles
 } from '../services/userService';
 import { User, Role } from '../types/api';
 

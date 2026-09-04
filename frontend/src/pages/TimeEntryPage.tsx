@@ -1,18 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Card, Button, Table, Tag, Space, Typography, Modal, Form,
-  Row, Col, Input, Select, DatePicker, message, Statistic, Row as ARow,
+  Card, Button, Table, Tag, Typography, Modal, Form,
+  Row, Col, Input, Select, message, Statistic, Row as ARow,
 } from 'antd';
-import { PlayCircleOutlined, StopOutlined, PlusOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlayCircleOutlined, StopOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useTimeEntryStore } from '../stores/timeEntryStore';
 import { useClientStore } from '../stores/clientStore';
 import { useMatterStore } from '../stores/matterStore';
-import { TimeEntry, CreateTimeEntryDto, Client, Matter } from '../types/api';
-import dayjs from 'dayjs';
+import { TimeEntry, Client, Matter } from '../types/api';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
-const { RangePicker } = DatePicker;
 
 const formatDuration = (min: number | null) => {
   if (!min) return '-';

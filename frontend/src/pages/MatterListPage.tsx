@@ -58,12 +58,12 @@ const MatterListPage: React.FC = () => {
 
   const handleSubmit = async (values: any) => {
     try {
+      const { dateRange, ...rest } = values;
       const data: CreateMatterDto = {
-        ...values,
-        startDate: values.dateRange?.[0]?.format('YYYY-MM-DD'),
-        deadline: values.dateRange?.[1]?.format('YYYY-MM-DD'),
+        ...rest,
+        startDate: dateRange?.[0]?.format('YYYY-MM-DD'),
+        deadline: dateRange?.[1]?.format('YYYY-MM-DD'),
       };
-      delete data.dateRange;
       if (editingMatter) {
         await updateMatter(editingMatter.id, data as UpdateMatterDto);
         message.success('业务更新成功');

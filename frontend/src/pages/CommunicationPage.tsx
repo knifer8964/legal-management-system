@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   Card, Button, Table, Tag, Space, Typography, Modal, Form,
-  Row, Col, Input, Select, message, Drawer, Descriptions,
+  Row, Col, Input, Select, message, Popconfirm, Drawer, Descriptions,
 } from 'antd';
 import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useCommunicationStore } from '../stores/communicationStore';
@@ -12,7 +12,7 @@ import {
   CommChannel, Direction, Client, Matter,
 } from '../types/api';
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
@@ -24,7 +24,6 @@ const channelColors: Record<CommChannel, string> = {
   WECHAT: 'green', EMAIL: 'purple', SMS: 'blue', PHONE: 'cyan',
   MEETING: 'orange', VIDEO: 'geekblue', SYSTEM: 'default', OTHER: 'default',
 };
-const directionLabels: Record<Direction, string> = { INBOUND: ' inbound', OUTBOUND: ' outbound' };
 
 const CommunicationPage: React.FC = () => {
   const { communications, loading, fetchCommunications, createCommunication, updateCommunication, deleteCommunication } = useCommunicationStore();

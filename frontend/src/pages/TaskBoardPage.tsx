@@ -3,7 +3,7 @@ import {
   Card, Button, Input, Space, Tag, Modal, Form, Row, Col,
   message, Popconfirm, Typography, Select, DatePicker, List,
 } from 'antd';
-import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined, CheckOutlined } from '@ant-design/icons';
+import { PlusOutlined, SearchOutlined, DeleteOutlined, CheckOutlined } from '@ant-design/icons';
 import { useTaskStore } from '../stores/taskStore';
 import { useMatterStore } from '../stores/matterStore';
 import { useUserStore } from '../stores/userStore';
@@ -13,8 +13,6 @@ import dayjs from 'dayjs';
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-const statusLabels: Record<TaskStatus, string> = { TODO: '待办', IN_PROGRESS: '进行中', DONE: '已完成', CANCELLED: '已取消' };
-const statusColors: Record<TaskStatus, string> = { TODO: 'orange', IN_PROGRESS: 'blue', DONE: 'green', CANCELLED: 'default' };
 const priorityColors: Record<Priority, string> = { HIGH: 'red', MEDIUM: 'orange', LOW: 'blue', URGENT: 'purple' };
 const priorityLabels: Record<Priority, string> = { HIGH: '高', MEDIUM: '中', LOW: '低', URGENT: '紧急' };
 

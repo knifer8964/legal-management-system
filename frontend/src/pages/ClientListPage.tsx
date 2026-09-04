@@ -11,7 +11,7 @@ import { useClientStore } from '../stores/clientStore';
 import { Client, CreateClientDto, UpdateClientDto, ClientType, ClientStatus } from '../types/api';
 import dayjs from 'dayjs';
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 const { Option } = Select;
 
 const typeLabels: Record<ClientType, string> = {

@@ -9,14 +9,13 @@ import {
   MessageOutlined,
   LogoutOutlined,
   UserOutlined,
-  PlayCircleOutlined,
   TeamOutlined as UsersOutlined,
   FileTextOutlined,
   FolderOutlined,
   SafetyCertificateOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import useAuthStore from '../stores/authStore';
 import { useTimeEntryStore } from '../stores/timeEntryStore';
 
@@ -28,7 +27,6 @@ const AppLayout: React.FC = () => {
   const location = useLocation();
   const { user, logout } = useAuthStore();
   const { running, elapsed, fetchRunning, tickElapsed } = useTimeEntryStore();
-  const timerRef = useRef<number | null>(null);
 
   useEffect(() => {
     fetchRunning();
