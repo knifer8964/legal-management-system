@@ -37,6 +37,13 @@ Thumbs.db
 *.temp
 _temp_*/
 
+# Release output
+release/
+frontend/release/
+
+# Temp scripts
+gen-icon.js
+
 # Secrets - NEVER commit
 .github_token
 .git-credentials

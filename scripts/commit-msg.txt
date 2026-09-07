@@ -1,28 +1,13 @@
-SQLite迁移: MySQL→SQLite + 移除Redis依赖
+修复前端 tsc -b 编译错误: 移除未使用导入和变量
 
-## 数据库迁移
-- Prisma provider: mysql → sqlite
-- DATABASE_URL: mysql://... → file:./dev.db
-- 移除所有 @db.* 类型注解（VarChar/Text/Decimal/DateTime/Date）
-- 12个 Json? 字段 → String?（JSON序列化为字符串存储）
-- 12个 enum 字段 → String（含 @default 改为字符串字面量）
-- 删除 11 个 enum 块（UserStatus/ClientType/ClientStatus/MatterType/MatterStatus/FeeType/Priority/CommChannel/Direction/TaskStatus/InvoiceStatus）
-- 新增 SQLite 迁移: 20260904014908_init_sqlite
+- DashboardPage: 删除未使用 FileTextOutlined/Legend/Priority/Tooltip/i参数
+- MatterListPage: dateRange 不在 CreateMatterDto 中,改用解构排除
+- ProfilePage: useAuthStore 改默认导入,删除未使用 Button,修复 User 类型字段
+- TaskBoardPage: 删除未使用 EditOutlined/statusLabels/statusColors
+- TimeEntryPage: 删除未使用 Space/PlusOutlined/CreateTimeEntryDto/dayjs/RangePicker/DatePicker
+- UserListPage: 删除未使用 UserStatus
+- AppLayout: 删除未使用 PlayCircleOutlined/timerRef/useRef
+- ClientListPage/CommunicationPage: 删除未使用 Text/directionLabels,补 Popconfirm 导入
+- roleStore/userStore: 删除未使用 getRoleById/getUserById
 
-## 代码适配
-- backend/src/types/api.ts: enum 导入改为字符串常量对象 + 类型别名（保持 XxxType.VALUE 用法兼容）
-- 12个 service/controller 文件: enum 导入源从 @prisma/client 改为 ../types/api
-- JSON 字段: 写入时 JSON.stringify，读取时 JSON.parse 还原
-- authMiddleware/authController: role.permissions 现为 JSON 字符串，读取时先解析
-- seed.ts: enum 值改为字符串字面量，JSON 字段改为 JSON.stringify
-
-## Redis 移除
-- backend/src/index.ts: 移除 redis 导入和连接逻辑
-- backend/package.json: 移除 redis 和 mysql2 依赖
-
-## 验证
-- 后端 tsc --noEmit: 零错误
-- 前端 tsc --noEmit: 零错误
-- prisma validate: 通过
-- prisma migrate reset --force + seed: 成功（4角色/3用户/5客户/5业务/5任务/4计时/2发票/4沟通/2企业配置/5时间线/3日志）
-- 8/8 接口冒烟测试通过: Dashboard/Clients/Matters/Tasks/Invoices/Documents/Roles/Users
+验证: npx tsc -b --noEmit 零错误
