@@ -39,6 +39,9 @@ model User {
   tasks                 Task[]
   timeEntries           TimeEntry[]
   createdInvoices       Invoice[]
+  reviewedContracts     Contract[]       @relation("ContractReviewer")
+  approvedContracts     Contract[]       @relation("ContractApprover")
+  createdContracts      Contract[]       @relation("ContractCreator")
 
   @@index([username])
   @@index([email])
@@ -123,6 +126,7 @@ model Client {
   invoices         Invoice[]
   enterpriseConfig EnterpriseConfig?
   timeEntries      TimeEntry[]
+  contracts        Contract[]
 
   @@index([clientType])
   @@index([name])
@@ -186,6 +190,7 @@ model Matter {
   timeEntries   TimeEntry[]
   invoices      Invoice[]
   communications Communication[]
+  contracts     Contract[]
 
   @@index([clientId])
   @@index([matterType])
@@ -496,6 +501,69 @@ model EnterpriseConfig {
   client        Client    @relation(fields: [clientId], references: [id])
 
   @@map("enterprise_configs")
+}
+
+// =====================================================
+// 合同管理模块
+// =====================================================
+
+model Contract {
+  id            Int       @id @default(autoincrement())
+  contractNo    String    @unique @map("contract_no") // 合同编号 HT-YYYYMMDD-XXXX
+  title         String    // 合同标题
+  contractType  String    @map("contract_type") // PURCHASE_SALE / SERVICE / EMPLOYMENT / LEASE / LOAN / CONSULTING / OTHER
+
+  // 关联
+  clientId      Int       @map("client_id")
+  matterId      Int?      @map("matter_id") // 关联业务事项（可选）
+
+  // 合同状态
+  status        String    @default("DRAFT") // DRAFT / REVIEWING / PENDING_SIGN / SIGNED / EXECUTING / COMPLETED / TERMINATED / EXPIRED
+
+  // 合同金额
+  amount        Decimal?  // 合同金额
+  currency      String    @default("CNY") // 币种
+
+  // 时间节点
+  startDate     DateTime? @map("start_date") // 合同开始日期
+  endDate       DateTime? @map("end_date") // 合同结束日期
+  signDate      DateTime? @map("sign_date") // 签订日期
+  reviewDate    DateTime? @map("review_date") // 审查日期
+
+  // 合同内容
+  content       String?   // 合同正文（富文本/Markdown）
+  summary       String?   // 合同摘要
+  attachments   String?   // 附件列表 (JSON 字符串: [{name, url, size}])
+
+  // 相对方信息
+  counterparty        String? @map("counterparty") // 相对方名称
+  counterpartyContact String? @map("counterparty_contact") // 相对方联系人
+  counterpartyPhone   String? @map("counterparty_phone") // 相对方电话
+
+  // 审批流程
+  reviewedBy    Int?      @map("reviewed_by") // 审查人
+  approvedBy    Int?      @map("approved_by") // 审批人
+  reviewNotes   String?   @map("review_notes") // 审查意见
+
+  // 创建人
+  createdById   Int       @map("created_by_id")
+
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  client        Client    @relation(fields: [clientId], references: [id])
+  matter        Matter?   @relation(fields: [matterId], references: [id])
+  reviewedByUser  User?   @relation("ContractReviewer", fields: [reviewedBy], references: [id])
+  approvedByUser  User?   @relation("ContractApprover", fields: [approvedBy], references: [id])
+  createdBy     User      @relation("ContractCreator", fields: [createdById], references: [id])
+
+  @@index([clientId])
+  @@index([matterId])
+  @@index([status])
+  @@index([contractType])
+  @@index([createdAt])
+  @@map("contracts")
 }
 
 // =====================================================

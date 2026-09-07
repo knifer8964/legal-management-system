@@ -1,13 +1,10 @@
-修复前端 tsc -b 编译错误: 移除未使用导入和变量
+Electron桌面打包完成: NSIS安装包生成成功
 
-- DashboardPage: 删除未使用 FileTextOutlined/Legend/Priority/Tooltip/i参数
-- MatterListPage: dateRange 不在 CreateMatterDto 中,改用解构排除
-- ProfilePage: useAuthStore 改默认导入,删除未使用 Button,修复 User 类型字段
-- TaskBoardPage: 删除未使用 EditOutlined/statusLabels/statusColors
-- TimeEntryPage: 删除未使用 Space/PlusOutlined/CreateTimeEntryDto/dayjs/RangePicker/DatePicker
-- UserListPage: 删除未使用 UserStatus
-- AppLayout: 删除未使用 PlayCircleOutlined/timerRef/useRef
-- ClientListPage/CommunicationPage: 删除未使用 Text/directionLabels,补 Popconfirm 导入
-- roleStore/userStore: 删除未使用 getRoleById/getUserById
-
-验证: npx tsc -b --noEmit 零错误
+- 生成 256x256 ICO图标(electron/assets/icon.ico, 270KB)
+- 安装 png-to-ico devDependency
+- .gitignore 新增 release/ 和 gen-icon.js 排除
+- Electron Builder 配置: NSIS x64, 非一键安装, 可选目录/桌面+开始菜单快捷方式
+- 打包结果: 公司法务智慧管理系统 Setup 1.0.0.exe (111.06 MB)
+- 位置: frontend/release/
+- win-unpacked: 216 MB (含 Electron 42.3.0 + 后端 resources + 前端 dist)
+- app.asar: 103 MB

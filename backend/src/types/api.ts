@@ -106,6 +106,29 @@ export const Direction = {
 } as const;
 export type Direction = (typeof Direction)[keyof typeof Direction];
 
+export const ContractType = {
+  PURCHASE_SALE: 'PURCHASE_SALE',
+  SERVICE: 'SERVICE',
+  EMPLOYMENT: 'EMPLOYMENT',
+  LEASE: 'LEASE',
+  LOAN: 'LOAN',
+  CONSULTING: 'CONSULTING',
+  OTHER: 'OTHER',
+} as const;
+export type ContractType = (typeof ContractType)[keyof typeof ContractType];
+
+export const ContractStatus = {
+  DRAFT: 'DRAFT',
+  REVIEWING: 'REVIEWING',
+  PENDING_SIGN: 'PENDING_SIGN',
+  SIGNED: 'SIGNED',
+  EXECUTING: 'EXECUTING',
+  COMPLETED: 'COMPLETED',
+  TERMINATED: 'TERMINATED',
+  EXPIRED: 'EXPIRED',
+} as const;
+export type ContractStatus = (typeof ContractStatus)[keyof typeof ContractStatus];
+
 // =====================================================
 // 通用类型
 // =====================================================
@@ -737,6 +760,104 @@ export interface EnterpriseConfig {
 
   createdAt: string;
   updatedAt: string;
+}
+
+// =====================================================
+// 合同管理类型
+// =====================================================
+
+export interface Contract {
+  id: number;
+  contractNo: string;
+  title: string;
+  contractType: ContractType;
+
+  clientId: number;
+  client?: Client;
+  matterId: number | null;
+  matter?: Matter;
+
+  status: ContractStatus;
+
+  amount: number | null;
+  currency: string;
+
+  startDate: string | null;
+  endDate: string | null;
+  signDate: string | null;
+  reviewDate: string | null;
+
+  content: string | null;
+  summary: string | null;
+  attachments: any;
+
+  counterparty: string | null;
+  counterpartyContact: string | null;
+  counterpartyPhone: string | null;
+
+  reviewedBy: number | null;
+  reviewedByUser?: User;
+  approvedBy: number | null;
+  approvedByUser?: User;
+  reviewNotes: string | null;
+
+  createdById: number;
+  createdBy?: User;
+
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateContractDto {
+  title: string;
+  contractType: ContractType;
+  clientId: number;
+  matterId?: number;
+  status?: ContractStatus;
+  amount?: number;
+  currency?: string;
+  startDate?: string;
+  endDate?: string;
+  signDate?: string;
+  reviewDate?: string;
+  content?: string;
+  summary?: string;
+  attachments?: any;
+  counterparty?: string;
+  counterpartyContact?: string;
+  counterpartyPhone?: string;
+  reviewedBy?: number;
+  approvedBy?: number;
+  reviewNotes?: string;
+}
+
+export interface UpdateContractDto extends Partial<CreateContractDto> {
+  status?: ContractStatus;
+}
+
+export interface ContractQueryParams extends PaginationParams {
+  clientId?: number;
+  matterId?: number;
+  contractType?: ContractType;
+  status?: ContractStatus;
+  search?: string;
+}
+
+export interface ContractStatusUpdateDto {
+  status: ContractStatus;
+  note?: string;
+}
+
+export interface ContractTimelineEvent {
+  id: number;
+  contractId: number;
+  fromStatus: string | null;
+  toStatus: string | null;
+  action: string;
+  note: string | null;
+  operatorId: number | null;
+  operator?: User;
+  createdAt: string;
 }
 
 // =====================================================
