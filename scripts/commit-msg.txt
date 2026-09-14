@@ -1,10 +1,1 @@
-Electron桌面打包完成: NSIS安装包生成成功
-
-- 生成 256x256 ICO图标(electron/assets/icon.ico, 270KB)
-- 安装 png-to-ico devDependency
-- .gitignore 新增 release/ 和 gen-icon.js 排除
-- Electron Builder 配置: NSIS x64, 非一键安装, 可选目录/桌面+开始菜单快捷方式
-- 打包结果: 公司法务智慧管理系统 Setup 1.0.0.exe (111.06 MB)
-- 位置: frontend/release/
-- win-unpacked: 216 MB (含 Electron 42.3.0 + 后端 resources + 前端 dist)
-- app.asar: 103 MB
+M11: 合同管理模块 — 完整合同生命周期管理（起草/审查/签订/执行/归档）
