@@ -1,1 +1,15 @@
-M11: 合同管理模块 — 完整合同生命周期管理（起草/审查/签订/执行/归档）
+﻿feat: Electron 安装包自包含化（工具链+程序一体化）
+
+修复此前安装包残缺不可用的问题（打包后端仅 1.29MB、无 node_modules，启动报 Cannot find module 'express'）。
+
+- 根因：electron-builder 在 util/filter.js 硬编码排除根级 node_modules，extraResources 无法携带后端依赖
+  -> 改用 electron/afterPack.js 钩子在打包后复制 backend-prod/node_modules
+- 后端运行时改用 Electron 内置 Node 启动（spawn(process.execPath) + ELECTRON_RUN_AS_NODE=1），目标机无需安装 Node
+- 前端改 HashRouter + Vite base:'./'，适配 file:// 协议加载；http.ts 401 跳转、auth.ts logout 同步修正
+- 后端 CORS 放行 file:// 与 null 来源（Electron 生产模式）
+- 数据库首次启动复制到 userData/legal.db，日志写入 userData/logs
+- scripts/prepare-backend-prod.js：一键生成精简后端运行时（75.6MB / 244 包，含 Prisma 引擎与 bcrypt napi 绑定）
+- 新增 scripts/e2e-electron-verify.js（CDP 端到端验证）与 scripts/e2e-electron-shot.js（页面截图）
+- 窗口标题改为“公司法务智慧管理系统”，关于对话框版本号读 app.getVersion()
+
+实测：win-unpacked + NSIS 安装包均已完成端到端验证（后端 production 在 3000 起、admin/123456 登录、仪表盘/发票/合同页面渲染真实数据）

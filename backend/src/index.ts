@@ -40,8 +40,24 @@ const PORT = process.env.PORT || 3000;
 
 // 中间件配置
 app.use(helmet());
+// CORS：支持逗号分隔白名单、通配 '*'，并放行 Electron(file:// 或 null) 以及无 Origin 的请求
+const corsOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 app.use(cors({
-  origin: process.env.CORS_ORIGIN?.split(',') || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // 无 Origin（同源直连、部分 Electron 请求）或通配白名单
+    if (!origin || corsOrigins.includes('*') || corsOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    // Electron 生产模式前端来源为 file:// 或 null
+    if (origin === 'file://' || origin === 'null') {
+      return callback(null, true);
+    }
+    return callback(null, false);
+  },
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));

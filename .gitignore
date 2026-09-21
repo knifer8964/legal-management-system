@@ -47,3 +47,6 @@ gen-icon.js
 # Secrets - NEVER commit
 .github_token
 .git-credentials
+
+# Generated backend runtime for Electron packaging (see scripts/prepare-backend-prod.js)
+backend-prod/

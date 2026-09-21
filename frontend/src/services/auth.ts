@@ -16,7 +16,7 @@ class AuthService {
   public logout(): void {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    window.location.href = '/login';
+    window.location.hash = '/login';
   }
 
   public getToken(): string | null {

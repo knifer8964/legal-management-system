@@ -2,7 +2,7 @@
   "name": "legal-management-system",
   "productName": "公司法务智慧管理系统",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "公司法务智慧管理系统 - 合同管理、案件管理、AI辅助决策",
   "author": "Legal Tech Team",
   "main": "electron/main.js",
@@ -56,6 +56,7 @@
       "output": "release",
       "buildResources": "electron/assets"
     },
+    "afterPack": "electron/afterPack.js",
     "files": [
       "dist/**/*",
       "electron/**/*",
@@ -63,12 +64,10 @@
     ],
     "extraResources": [
       {
-        "from": "../backend",
+        "from": "../backend-prod",
         "to": "backend",
         "filter": [
-          "**/*",
-          "!**/node_modules/.cache/**",
-          "!**/logs/**"
+          "**/*"
         ]
       }
     ],

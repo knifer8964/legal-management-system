@@ -24,7 +24,8 @@ class HttpService {
         if (status === 401 || status === 403) {
           localStorage.removeItem('token');
           localStorage.removeItem('user');
-          window.location.href = '/login';
+          // 兼容 Electron(file://) 与 HashRouter，用 hash 跳转登录
+          window.location.hash = '/login';
           // 返回一个永远 pending 的 Promise，避免未处理的 rejection 继续抛到组件/ErrorBoundary
           return new Promise(() => {});
         }
