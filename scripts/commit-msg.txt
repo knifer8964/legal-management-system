@@ -1,6 +1,5 @@
-﻿fix: Vite dev server 绑定 IPv4
+﻿chore: 安装验证产物 + e2e 脚本改进
 
-本机 IPv6 回环（[::1]）不可用，Vite 默认仅监听 [::1]:5173 导致 dev 页面完全无法访问。
-显式配置 server.host='0.0.0.0' + port 5173 + strictPort。
-
-验证：127.0.0.1:5173 返回 HTTP 200，标题“公司法务智慧管理系统”。
+- docs/screenshots/installed-dashboard.png：已安装版本（C:\Program Files\legal-management-system，v1.0.1）实测仪表盘截图
+- e2e-electron-verify.js：支持自定义截图输出路径
+- e2e-electron-shot.js：修正输出路径解析（支持绝对路径）

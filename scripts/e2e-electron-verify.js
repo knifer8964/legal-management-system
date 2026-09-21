@@ -70,7 +70,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
   const shot = await send('Page.captureScreenshot', { format: 'png' });
   if (shot.result && shot.result.data) {
-    const out = path.join(__dirname, 'dashboard.png');
+    const out = process.argv[2] ? path.resolve(process.argv[2]) : path.join(__dirname, 'dashboard.png');
     fs.writeFileSync(out, Buffer.from(shot.result.data, 'base64'));
     console.log('6) 截图已保存:', out);
   } else {

@@ -21,7 +21,7 @@ const httpGetJson = (url) => new Promise((res, rej) => {
   const r = await send('Runtime.evaluate', { expression: `document.body.innerText.replace(/\\s+/g,' ').slice(0,400)`, returnByValue: true });
   console.log('路由', route, '文本:', r.result && r.result.result && r.result.result.value);
   const shot = await send('Page.captureScreenshot', { format: 'png' });
-  const out = path.join(__dirname, outName);
+  const out = path.isAbsolute(outName) ? outName : path.join(__dirname, outName);
   fs.writeFileSync(out, Buffer.from(shot.result.data, 'base64'));
   console.log('已保存:', out);
   ws.close(); process.exit(0);
