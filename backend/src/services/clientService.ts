@@ -1,4 +1,4 @@
-// =====================================================
+﻿// =====================================================
 // 客户管理服务 - 业务逻辑层
 // =====================================================
 
@@ -39,7 +39,7 @@ export class ClientService {
         monthlyFee: data.monthlyFee,
         serviceStart: data.serviceStart ? new Date(data.serviceStart) : null,
         serviceEnd: data.serviceEnd ? new Date(data.serviceEnd) : null,
-        tags: data.tags ? JSON.stringify(data.tags) : undefined,
+        tags: (() => { if (Array.isArray(data.tags)) return JSON.stringify(data.tags); if (typeof data.tags === 'string' && data.tags.trim()) return data.tags; return undefined; })(),
         notes: data.notes,
         source: data.source,
         status: ClientStatus.ACTIVE,
@@ -68,7 +68,7 @@ export class ClientService {
 
     // 处理标签
     if (data.tags !== undefined) {
-      updateData.tags = data.tags ? JSON.stringify(data.tags) : undefined;
+      updateData.tags = (() => { if (Array.isArray(data.tags)) return JSON.stringify(data.tags); if (typeof data.tags === 'string' && data.tags.trim()) return data.tags; return undefined; })();
     }
 
     const client = await prisma.client.update({

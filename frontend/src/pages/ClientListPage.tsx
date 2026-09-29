@@ -74,7 +74,14 @@ const ClientListPage: React.FC = () => {
       setEditingClient(null);
       fetchClients({ page: 1, pageSize: 10, search, clientType: typeFilter });
     } catch (e: any) {
-      message.error(e.message || '操作失败');
+      const errMsg =
+        e?.response?.data?.error?.message ||
+        e?.response?.data?.message ||
+        (e?.response?.data ? JSON.stringify(e.response.data) : null) ||
+        e.message ||
+        '操作失败';
+      message.error(errMsg);
+    }
     }
   };
 

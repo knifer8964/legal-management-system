@@ -1,4 +1,4 @@
-// =====================================================
+﻿// =====================================================
 // 客户管理控制器 - HTTP 请求处理
 // =====================================================
 
@@ -25,11 +25,11 @@ export class ClientController {
         return Errors.badRequest(res, '客户类型无效');
       }
 
-      if (data.email && !this.isValidEmail(data.email)) {
+      if (data.email.trim() && !this.isValidEmail(data.email)) {
         return Errors.badRequest(res, '邮箱格式无效');
       }
 
-      if (data.phone && !this.isValidPhone(data.phone)) {
+      if (data.phone.trim() && !this.isValidPhone(data.phone)) {
         return Errors.badRequest(res, '手机号格式无效');
       }
 
@@ -104,11 +104,11 @@ export class ClientController {
       const data: UpdateClientDto = req.body;
 
       // 验证
-      if (data.email && !this.isValidEmail(data.email)) {
+      if (data.email.trim() && !this.isValidEmail(data.email)) {
         return Errors.badRequest(res, '邮箱格式无效');
       }
 
-      if (data.phone && !this.isValidPhone(data.phone)) {
+      if (data.phone.trim() && !this.isValidPhone(data.phone)) {
         return Errors.badRequest(res, '手机号格式无效');
       }
 
